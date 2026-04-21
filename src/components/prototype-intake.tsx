@@ -2,18 +2,23 @@
 
 import { useDeferredValue, useEffect, useState, useTransition } from "react";
 import {
+  onAuthStateChanged,
+  signInAnonymously,
+  type User,
+} from "firebase/auth";
+import {
   addDoc,
   collection,
   deleteDoc,
   doc,
   limit,
   onSnapshot,
-  orderBy,
   query,
   serverTimestamp,
   updateDoc,
+  where,
 } from "firebase/firestore";
-import { firestore } from "@/lib/firebase";
+import { auth, firestore } from "@/lib/firebase";
 
 const categories = ["평가", "기록", "리마인드", "대시보드"];
 
@@ -28,14 +33,17 @@ type PrototypeEntry = {
   name: string;
   category: string;
   note: string;
+  ownerId?: string;
   createdAt?: { seconds?: number };
 };
+
+type AuthStatus = "idle" | "signing-in" | "authenticated" | "error";
 
 export function PrototypeIntake() {
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState(
     firestore
-      ? "Firebase 연결 후 테스트 데이터를 바로 저장할 수 있습니다."
+      ? "익명 로그인을 확인한 뒤 테스트 데이터를 저장할 수 있습니다."
       : "Firebase 환경변수가 아직 없어서 현재는 저장이 비활성화되어 있습니다.",
   );
   const [entries, setEntries] = useState<PrototypeEntry[]>([]);
@@ -44,31 +52,70 @@ export function PrototypeIntake() {
   const [activeCategory, setActiveCategory] = useState("전체");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>(
+    auth ? "signing-in" : "error",
+  );
   const [isPending, startTransition] = useTransition();
   const deferredSearchText = useDeferredValue(searchText);
 
   const isConfigured = Boolean(firestore);
+  const isAuthenticated = authStatus === "authenticated" && Boolean(currentUser);
 
   useEffect(() => {
-    if (!firestore) {
+    const activeAuth = auth;
+
+    if (!activeAuth) {
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(activeAuth, async (user) => {
+      if (user) {
+        setCurrentUser(user);
+        setAuthStatus("authenticated");
+        setMessage("익명 로그인 완료. 내 테스트 데이터를 저장하고 관리할 수 있습니다.");
+        return;
+      }
+
+      try {
+        await signInAnonymously(activeAuth);
+      } catch {
+        setAuthStatus("error");
+        setMessage(
+          "익명 로그인에 실패했습니다. Firebase 콘솔에서 Anonymous 로그인 제공자를 활성화해주세요.",
+        );
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (!firestore || !currentUser) {
       return;
     }
 
     const entriesQuery = query(
       collection(firestore, "prototypeEntries"),
-      orderBy("createdAt", "desc"),
-      limit(6),
+      where("ownerId", "==", currentUser.uid),
+      limit(20),
     );
 
     const unsubscribe = onSnapshot(
       entriesQuery,
       (snapshot) => {
-        setEntries(
-          snapshot.docs.map((doc) => ({
+        const nextEntries = snapshot.docs
+          .map((doc) => ({
             id: doc.id,
             ...(doc.data() as Omit<PrototypeEntry, "id">),
-          })),
-        );
+          }))
+          .sort((left, right) => {
+            const rightSeconds = right.createdAt?.seconds ?? 0;
+            const leftSeconds = left.createdAt?.seconds ?? 0;
+            return rightSeconds - leftSeconds;
+          });
+
+        setEntries(nextEntries);
         setIsLoadingEntries(false);
       },
       () => {
@@ -78,7 +125,7 @@ export function PrototypeIntake() {
     );
 
     return unsubscribe;
-  }, []);
+  }, [currentUser]);
 
   function updateField(field: keyof typeof initialForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -110,6 +157,11 @@ export function PrototypeIntake() {
   async function handleDelete(entryId: string) {
     if (!firestore) {
       setMessage("Firebase 설정을 먼저 확인해주세요.");
+      return;
+    }
+
+    if (!currentUser) {
+      setMessage("익명 로그인 확인 후 다시 시도해주세요.");
       return;
     }
 
@@ -149,8 +201,8 @@ export function PrototypeIntake() {
     event.preventDefault();
     const activeFirestore = firestore;
 
-    if (!isConfigured || !activeFirestore) {
-      setMessage("`.env.local`에 Firebase 키를 넣은 뒤 다시 시도해주세요.");
+    if (!isConfigured || !activeFirestore || !currentUser) {
+      setMessage("Firebase 환경변수와 익명 로그인 상태를 확인해주세요.");
       return;
     }
 
@@ -166,6 +218,7 @@ export function PrototypeIntake() {
         } else {
           await addDoc(collection(activeFirestore, "prototypeEntries"), {
             ...form,
+            ownerId: currentUser.uid,
             createdAt: serverTimestamp(),
           });
           setMessage("`prototypeEntries` 컬렉션에 테스트 데이터가 저장되었습니다.");
@@ -190,13 +243,34 @@ export function PrototypeIntake() {
           </div>
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              isConfigured
+              isConfigured && isAuthenticated
                 ? "bg-emerald-100 text-emerald-700"
                 : "bg-amber-100 text-amber-700"
             }`}
           >
-            {isConfigured ? "configured" : "needs env"}
+            {isConfigured && isAuthenticated ? "ready" : "setup needed"}
           </span>
+        </div>
+
+        <div className="mt-5 rounded-[1.25rem] border border-card-border bg-white/55 p-4 text-sm leading-7 text-muted">
+          <p>
+            인증 상태:{" "}
+            <strong className="text-foreground">
+              {authStatus === "authenticated"
+                ? "익명 로그인 완료"
+                : authStatus === "signing-in"
+                  ? "익명 로그인 시도 중"
+                  : authStatus === "error"
+                    ? "설정 필요"
+                    : "대기 중"}
+            </strong>
+          </p>
+          <p>
+            사용자 ID:{" "}
+            <span className="font-mono text-xs">
+              {currentUser?.uid ?? "없음"}
+            </span>
+          </p>
         </div>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -255,7 +329,7 @@ export function PrototypeIntake() {
               <button
                 className="inline-flex items-center justify-center rounded-full bg-[#1f2a24] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2b3931] disabled:cursor-not-allowed disabled:bg-[#8d948f]"
                 type="submit"
-                disabled={isPending || !isConfigured}
+                disabled={isPending || !isConfigured || !isAuthenticated}
               >
                 {isPending
                   ? editingId
@@ -320,6 +394,12 @@ export function PrototypeIntake() {
           {isLoadingEntries ? (
             <div className="rounded-[1.5rem] border border-card-border bg-white/55 p-5 text-sm text-muted">
               Firestore 목록을 불러오는 중입니다.
+            </div>
+          ) : null}
+
+          {!isLoadingEntries && !isAuthenticated ? (
+            <div className="rounded-[1.5rem] border border-dashed border-card-border p-5 text-sm leading-7 text-muted">
+              익명 로그인 완료 후 내 데이터 목록이 표시됩니다.
             </div>
           ) : null}
 

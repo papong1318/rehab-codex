@@ -15,6 +15,7 @@
 - `src/app/page.tsx`: 시작 화면
 - `src/components/prototype-intake.tsx`: Firestore 저장 테스트 폼
 - `src/lib/firebase.ts`: Firebase 앱/Firestore 초기화
+- `firestore.rules`: 익명 로그인 기준 Firestore 보안 규칙 예시
 - `public/prototype.html`: 정적 HTML 와이어프레임
 - `.env.example`: Firebase 환경변수 예시
 
@@ -34,6 +35,8 @@ npm run dev
 3. 발급된 웹 앱 설정값을 `.env.local`에 입력합니다.
 4. 필요하면 `src/lib/firebase.ts`를 기준으로 Firestore 컬렉션 로직을 추가합니다.
 5. 홈 화면 하단 테스트 폼으로 `prototypeEntries` 컬렉션 저장을 확인합니다.
+6. Firebase 콘솔 `Authentication > Sign-in method`에서 `익명` 제공자를 활성화합니다.
+7. Firebase 콘솔 `Firestore Database > 규칙`에 `firestore.rules` 내용을 반영합니다.
 
 예시:
 
@@ -66,3 +69,4 @@ npm run deploy:prod
 
 - 배포 전 Vercel 대시보드에도 동일한 Firebase 환경변수를 등록해야 합니다.
 - `public/prototype.html`로 화면 구조를 먼저 맞춘 뒤 React 컴포넌트로 옮기면 작업이 수월합니다.
+- 익명 로그인 모드에서는 각 사용자가 자기 `ownerId` 문서만 읽고 수정하도록 설계되어 있습니다.
