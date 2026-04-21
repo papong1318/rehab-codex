@@ -11,6 +11,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { firestore } from "@/lib/firebase";
 
@@ -42,6 +43,7 @@ export function PrototypeIntake() {
   const [searchText, setSearchText] = useState("");
   const [activeCategory, setActiveCategory] = useState("전체");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const deferredSearchText = useDeferredValue(searchText);
 
@@ -115,12 +117,32 @@ export function PrototypeIntake() {
 
     try {
       await deleteDoc(doc(firestore, "prototypeEntries", entryId));
+      if (editingId === entryId) {
+        setEditingId(null);
+        setForm(initialForm);
+      }
       setMessage("선택한 항목을 삭제했습니다.");
     } catch {
       setMessage("삭제 중 오류가 발생했습니다. Firestore 권한 규칙을 확인해주세요.");
     } finally {
       setDeletingId(null);
     }
+  }
+
+  function handleEdit(entry: PrototypeEntry) {
+    setEditingId(entry.id);
+    setForm({
+      name: entry.name ?? "",
+      category: entry.category ?? categories[0],
+      note: entry.note ?? "",
+    });
+    setMessage("수정 모드입니다. 내용을 고친 뒤 업데이트를 눌러주세요.");
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+    setForm(initialForm);
+    setMessage("수정 모드를 취소했습니다.");
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -134,13 +156,22 @@ export function PrototypeIntake() {
 
     startTransition(async () => {
       try {
-        await addDoc(collection(activeFirestore, "prototypeEntries"), {
-          ...form,
-          createdAt: serverTimestamp(),
-        });
+        if (editingId) {
+          await updateDoc(doc(activeFirestore, "prototypeEntries", editingId), {
+            ...form,
+            updatedAt: serverTimestamp(),
+          });
+          setEditingId(null);
+          setMessage("선택한 항목을 업데이트했습니다.");
+        } else {
+          await addDoc(collection(activeFirestore, "prototypeEntries"), {
+            ...form,
+            createdAt: serverTimestamp(),
+          });
+          setMessage("`prototypeEntries` 컬렉션에 테스트 데이터가 저장되었습니다.");
+        }
 
         setForm(initialForm);
-        setMessage("`prototypeEntries` 컬렉션에 테스트 데이터가 저장되었습니다.");
       } catch {
         setMessage("저장 중 오류가 발생했습니다. Firebase 설정과 권한 규칙을 확인해주세요.");
       }
@@ -153,7 +184,9 @@ export function PrototypeIntake() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium text-muted">Firebase Test Form</p>
-            <h2 className="mt-2 text-2xl font-semibold">Firestore 저장 테스트</h2>
+            <h2 className="mt-2 text-2xl font-semibold">
+              {editingId ? "Firestore 항목 수정" : "Firestore 저장 테스트"}
+            </h2>
           </div>
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -208,13 +241,31 @@ export function PrototypeIntake() {
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm leading-7 text-muted">{message}</p>
-            <button
-              className="inline-flex items-center justify-center rounded-full bg-[#1f2a24] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2b3931] disabled:cursor-not-allowed disabled:bg-[#8d948f]"
-              type="submit"
-              disabled={isPending || !isConfigured}
-            >
-              {isPending ? "저장 중..." : "Firestore에 저장"}
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {editingId ? (
+                <button
+                  className="inline-flex items-center justify-center rounded-full border border-card-border bg-white/70 px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-white"
+                  type="button"
+                  onClick={handleCancelEdit}
+                  disabled={isPending}
+                >
+                  취소
+                </button>
+              ) : null}
+              <button
+                className="inline-flex items-center justify-center rounded-full bg-[#1f2a24] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2b3931] disabled:cursor-not-allowed disabled:bg-[#8d948f]"
+                type="submit"
+                disabled={isPending || !isConfigured}
+              >
+                {isPending
+                  ? editingId
+                    ? "업데이트 중..."
+                    : "저장 중..."
+                  : editingId
+                    ? "업데이트"
+                    : "Firestore에 저장"}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -301,7 +352,15 @@ export function PrototypeIntake() {
               <p className="mt-4 text-sm leading-7 text-foreground/80">
                 {entry.note || "메모 없음"}
               </p>
-              <div className="mt-4 flex justify-end">
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="rounded-full border border-card-border bg-white/75 px-4 py-2 text-sm font-medium text-foreground transition hover:bg-white"
+                  onClick={() => handleEdit(entry)}
+                  disabled={isPending}
+                >
+                  수정
+                </button>
                 <button
                   type="button"
                   className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
