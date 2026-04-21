@@ -13,6 +13,7 @@
 ## 프로젝트 구조
 
 - `src/app/page.tsx`: 시작 화면
+- `src/components/prototype-intake.tsx`: Firestore 저장 테스트 폼
 - `src/lib/firebase.ts`: Firebase 앱/Firestore 초기화
 - `public/prototype.html`: 정적 HTML 와이어프레임
 - `.env.example`: Firebase 환경변수 예시
@@ -32,6 +33,7 @@ npm run dev
 2. 웹 앱을 등록합니다.
 3. 발급된 웹 앱 설정값을 `.env.local`에 입력합니다.
 4. 필요하면 `src/lib/firebase.ts`를 기준으로 Firestore 컬렉션 로직을 추가합니다.
+5. 홈 화면 하단 테스트 폼으로 `prototypeEntries` 컬렉션 저장을 확인합니다.
 
 예시:
 

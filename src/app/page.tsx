@@ -1,11 +1,13 @@
 import { getFirebaseStatus } from "@/lib/firebase";
+import { PrototypeIntake } from "@/components/prototype-intake";
 
 export default function Home() {
   const firebaseStatus = getFirebaseStatus();
 
   return (
     <main className="hero-grid flex flex-1 items-center px-5 py-10 sm:px-8 lg:px-12">
-      <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.35fr_0.85fr]">
+      <div className="mx-auto grid w-full max-w-6xl gap-6">
+        <div className="grid gap-6 lg:grid-cols-[1.35fr_0.85fr]">
         <section className="glass-card fade-up rounded-[2rem] p-8 sm:p-10 lg:p-14">
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-card-border bg-white/65 px-4 py-2 text-sm text-muted">
             <span className="h-2.5 w-2.5 rounded-full bg-accent" />
@@ -97,6 +99,9 @@ export default function Home() {
             </ol>
           </div>
         </aside>
+        </div>
+
+        <PrototypeIntake />
       </div>
     </main>
   );
