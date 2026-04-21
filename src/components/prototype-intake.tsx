@@ -168,6 +168,34 @@ export function PrototypeIntake() {
   const recentlyUpdatedCount = entries.filter(
     (entry) => (entry.createdAt?.seconds ?? 0) > 0,
   ).length;
+  const activityByDay = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - (6 - index));
+
+    const nextDate = new Date(date);
+    nextDate.setDate(nextDate.getDate() + 1);
+
+    const count = entries.filter((entry) => {
+      const seconds = entry.createdAt?.seconds;
+      if (!seconds) {
+        return false;
+      }
+
+      const createdAt = new Date(seconds * 1000);
+      return createdAt >= date && createdAt < nextDate;
+    }).length;
+
+    return {
+      label: new Intl.DateTimeFormat("ko-KR", {
+        month: "numeric",
+        day: "numeric",
+      }).format(date),
+      count,
+    };
+  });
+  const maxActivityCount = Math.max(1, ...activityByDay.map((item) => item.count));
+  const recentTimeline = entries.slice(0, 5);
 
   async function handleDelete(entryId: string) {
     if (!firestore) {
@@ -316,115 +344,189 @@ export function PrototypeIntake() {
         </div>
 
         <div className="glass-card fade-up-delay-2 rounded-[2rem] p-7 sm:p-8">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-muted">Firebase Test Form</p>
-            <h2 className="mt-2 text-2xl font-semibold">
-              {editingId ? "Firestore 항목 수정" : "Firestore 저장 테스트"}
-            </h2>
-          </div>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              isConfigured && isAuthenticated
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-amber-100 text-amber-700"
-            }`}
-          >
-            {isConfigured && isAuthenticated ? "ready" : "setup needed"}
-          </span>
-        </div>
-
-        <div className="mt-5 rounded-[1.25rem] border border-card-border bg-white/55 p-4 text-sm leading-7 text-muted">
-          <p>
-            인증 상태:{" "}
-            <strong className="text-foreground">
-              {authStatus === "authenticated"
-                ? "익명 로그인 완료"
-                : authStatus === "signing-in"
-                  ? "익명 로그인 시도 중"
-                  : authStatus === "error"
-                    ? "설정 필요"
-                    : "대기 중"}
-            </strong>
-          </p>
-          <p>
-            사용자 ID:{" "}
-            <span className="font-mono text-xs">
-              {currentUser?.uid ?? "없음"}
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-muted">Firebase Test Form</p>
+              <h2 className="mt-2 text-2xl font-semibold">
+                {editingId ? "Firestore 항목 수정" : "Firestore 저장 테스트"}
+              </h2>
+            </div>
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                isConfigured && isAuthenticated
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              {isConfigured && isAuthenticated ? "ready" : "setup needed"}
             </span>
-          </p>
-        </div>
+          </div>
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="mt-5 rounded-[1.25rem] border border-card-border bg-white/55 p-4 text-sm leading-7 text-muted">
+            <p>
+              인증 상태:{" "}
+              <strong className="text-foreground">
+                {authStatus === "authenticated"
+                  ? "익명 로그인 완료"
+                  : authStatus === "signing-in"
+                    ? "익명 로그인 시도 중"
+                    : authStatus === "error"
+                      ? "설정 필요"
+                      : "대기 중"}
+              </strong>
+            </p>
+            <p>
+              사용자 ID:{" "}
+              <span className="font-mono text-xs">
+                {currentUser?.uid ?? "없음"}
+              </span>
+            </p>
+          </div>
+
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium">이름</span>
+                <input
+                  className="w-full rounded-2xl border border-card-border bg-white/70 px-4 py-3 outline-none transition focus:border-accent"
+                  value={form.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                  placeholder="예: 사용자 A"
+                  required
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium">카테고리</span>
+                <select
+                  className="w-full rounded-2xl border border-card-border bg-white/70 px-4 py-3 outline-none transition focus:border-accent"
+                  value={form.category}
+                  onChange={(event) => updateField("category", event.target.value)}
+                >
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
             <label className="block">
-              <span className="mb-2 block text-sm font-medium">이름</span>
-              <input
-                className="w-full rounded-2xl border border-card-border bg-white/70 px-4 py-3 outline-none transition focus:border-accent"
-                value={form.name}
-                onChange={(event) => updateField("name", event.target.value)}
-                placeholder="예: 사용자 A"
+              <span className="mb-2 block text-sm font-medium">메모</span>
+              <textarea
+                className="min-h-32 w-full rounded-[1.5rem] border border-card-border bg-white/70 px-4 py-3 outline-none transition focus:border-accent"
+                value={form.note}
+                onChange={(event) => updateField("note", event.target.value)}
+                placeholder="실험에서 저장해보고 싶은 짧은 테스트 메모"
                 required
               />
             </label>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium">카테고리</span>
-              <select
-                className="w-full rounded-2xl border border-card-border bg-white/70 px-4 py-3 outline-none transition focus:border-accent"
-                value={form.category}
-                onChange={(event) => updateField("category", event.target.value)}
-              >
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium">메모</span>
-            <textarea
-              className="min-h-32 w-full rounded-[1.5rem] border border-card-border bg-white/70 px-4 py-3 outline-none transition focus:border-accent"
-              value={form.note}
-              onChange={(event) => updateField("note", event.target.value)}
-              placeholder="실험에서 저장해보고 싶은 짧은 테스트 메모"
-              required
-            />
-          </label>
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm leading-7 text-muted">{message}</p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              {editingId ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm leading-7 text-muted">{message}</p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                {editingId ? (
+                  <button
+                    className="inline-flex items-center justify-center rounded-full border border-card-border bg-white/70 px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-white"
+                    type="button"
+                    onClick={handleCancelEdit}
+                    disabled={isPending}
+                  >
+                    취소
+                  </button>
+                ) : null}
                 <button
-                  className="inline-flex items-center justify-center rounded-full border border-card-border bg-white/70 px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-white"
-                  type="button"
-                  onClick={handleCancelEdit}
-                  disabled={isPending}
+                  className="inline-flex items-center justify-center rounded-full bg-[#1f2a24] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2b3931] disabled:cursor-not-allowed disabled:bg-[#8d948f]"
+                  type="submit"
+                  disabled={isPending || !isConfigured || !isAuthenticated}
                 >
-                  취소
+                  {isPending
+                    ? editingId
+                      ? "업데이트 중..."
+                      : "저장 중..."
+                    : editingId
+                      ? "업데이트"
+                      : "Firestore에 저장"}
                 </button>
-              ) : null}
-              <button
-                className="inline-flex items-center justify-center rounded-full bg-[#1f2a24] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2b3931] disabled:cursor-not-allowed disabled:bg-[#8d948f]"
-                type="submit"
-                disabled={isPending || !isConfigured || !isAuthenticated}
-              >
-                {isPending
-                  ? editingId
-                    ? "업데이트 중..."
-                    : "저장 중..."
-                  : editingId
-                    ? "업데이트"
-                    : "Firestore에 저장"}
-              </button>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
+
+      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="glass-card fade-up-delay-2 rounded-[2rem] p-7 sm:p-8">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-muted">Activity</p>
+              <h2 className="mt-2 text-2xl font-semibold">최근 7일 활동</h2>
+            </div>
+            <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-muted">
+              7-day
+            </span>
+          </div>
+
+          <div className="grid h-52 grid-cols-7 items-end gap-3">
+            {activityByDay.map((item) => (
+              <div key={item.label} className="flex h-full flex-col justify-end gap-3">
+                <div className="text-center text-xs text-muted">{item.count}</div>
+                <div className="flex-1 rounded-[1.25rem] bg-white/60 p-1">
+                  <div
+                    className="w-full rounded-[1rem] bg-[#1f2a24] transition-[height]"
+                    style={{
+                      height: `${Math.max(10, (item.count / maxActivityCount) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <div className="text-center text-xs text-muted">{item.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="glass-card fade-up-delay-2 rounded-[2rem] p-7 sm:p-8">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-muted">Timeline</p>
+              <h2 className="mt-2 text-2xl font-semibold">최근 변경 타임라인</h2>
+            </div>
+            <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-muted">
+              latest 5
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {recentTimeline.length === 0 ? (
+              <div className="rounded-[1.5rem] border border-dashed border-card-border p-5 text-sm leading-7 text-muted">
+                아직 활동 기록이 없습니다. 첫 항목을 저장하면 타임라인이 시작됩니다.
+              </div>
+            ) : null}
+
+            {recentTimeline.map((entry, index) => (
+              <div key={entry.id} className="flex gap-4">
+                <div className="flex w-6 flex-col items-center">
+                  <div className="h-3 w-3 rounded-full bg-accent" />
+                  {index < recentTimeline.length - 1 ? (
+                    <div className="mt-2 h-full w-px bg-card-border" />
+                  ) : null}
+                </div>
+                <div className="flex-1 rounded-[1.5rem] border border-card-border bg-white/60 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-semibold">{entry.name || "이름 없음"}</p>
+                      <p className="mt-1 text-sm text-muted">{entry.category}</p>
+                    </div>
+                    <span className="text-xs text-muted">{formatCreatedAt(entry)}</span>
+                  </div>
+                  <p className="mt-3 text-sm leading-7 text-foreground/80">
+                    {entry.note || "메모 없음"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
 
       <div className="glass-card fade-up-delay-2 rounded-[2rem] p-7 sm:p-8">
