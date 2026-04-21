@@ -154,6 +154,21 @@ export function PrototypeIntake() {
     return matchesCategory && matchesQuery;
   });
 
+  const categorySummary = categories.map((category) => {
+    const count = entries.filter((entry) => entry.category === category).length;
+    return { category, count };
+  });
+
+  const maxCategoryCount = Math.max(
+    1,
+    ...categorySummary.map((item) => item.count),
+  );
+
+  const latestEntry = entries[0] ?? null;
+  const recentlyUpdatedCount = entries.filter(
+    (entry) => (entry.createdAt?.seconds ?? 0) > 0,
+  ).length;
+
   async function handleDelete(entryId: string) {
     if (!firestore) {
       setMessage("Firebase 설정을 먼저 확인해주세요.");
@@ -232,8 +247,75 @@ export function PrototypeIntake() {
   }
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-      <div className="glass-card fade-up-delay-2 rounded-[2rem] p-7 sm:p-8">
+    <section className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        <article className="glass-card rounded-[1.75rem] p-6">
+          <p className="text-sm font-medium text-muted">총 항목 수</p>
+          <p className="mt-3 text-4xl font-semibold">{entries.length}</p>
+          <p className="mt-2 text-sm leading-7 text-muted">
+            현재 익명 사용자 계정에 저장된 전체 prototypeEntries 수입니다.
+          </p>
+        </article>
+
+        <article className="glass-card rounded-[1.75rem] p-6">
+          <p className="text-sm font-medium text-muted">최근 활동</p>
+          <p className="mt-3 text-2xl font-semibold">
+            {latestEntry ? latestEntry.name : "아직 없음"}
+          </p>
+          <p className="mt-2 text-sm leading-7 text-muted">
+            {latestEntry
+              ? `${latestEntry.category} · ${formatCreatedAt(latestEntry)}`
+              : "첫 테스트 데이터를 저장하면 여기에 최근 활동이 표시됩니다."}
+          </p>
+        </article>
+
+        <article className="glass-card rounded-[1.75rem] p-6">
+          <p className="text-sm font-medium text-muted">활성 카테고리</p>
+          <p className="mt-3 text-2xl font-semibold">
+            {categorySummary
+              .sort((left, right) => right.count - left.count)[0]
+              ?.category ?? "없음"}
+          </p>
+          <p className="mt-2 text-sm leading-7 text-muted">
+            데이터가 가장 많이 쌓인 영역을 빠르게 확인할 수 있습니다.
+            현재 집계된 항목은 {recentlyUpdatedCount}개입니다.
+          </p>
+        </article>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="glass-card fade-up-delay-2 rounded-[2rem] p-7 sm:p-8">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-muted">Overview</p>
+              <h2 className="mt-2 text-2xl font-semibold">카테고리 분포</h2>
+            </div>
+            <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-muted">
+              real-time
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {categorySummary.map((item) => (
+              <div key={item.category} className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">{item.category}</span>
+                  <span className="text-muted">{item.count}개</span>
+                </div>
+                <div className="h-3 overflow-hidden rounded-full bg-white/70">
+                  <div
+                    className="h-full rounded-full bg-accent transition-[width]"
+                    style={{
+                      width: `${(item.count / maxCategoryCount) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="glass-card fade-up-delay-2 rounded-[2rem] p-7 sm:p-8">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium text-muted">Firebase Test Form</p>
@@ -342,6 +424,7 @@ export function PrototypeIntake() {
             </div>
           </div>
         </form>
+      </div>
       </div>
 
       <div className="glass-card fade-up-delay-2 rounded-[2rem] p-7 sm:p-8">
