@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useDeferredValue, useEffect, useState, useTransition } from "react";
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   limit,
   onSnapshot,
   orderBy,
@@ -37,7 +39,11 @@ export function PrototypeIntake() {
   );
   const [entries, setEntries] = useState<PrototypeEntry[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(() => Boolean(firestore));
+  const [searchText, setSearchText] = useState("");
+  const [activeCategory, setActiveCategory] = useState("전체");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const deferredSearchText = useDeferredValue(searchText);
 
   const isConfigured = Boolean(firestore);
 
@@ -85,6 +91,36 @@ export function PrototypeIntake() {
       dateStyle: "short",
       timeStyle: "short",
     }).format(entry.createdAt.seconds * 1000);
+  }
+
+  const filteredEntries = entries.filter((entry) => {
+    const matchesCategory =
+      activeCategory === "전체" || entry.category === activeCategory;
+    const normalizedQuery = deferredSearchText.trim().toLowerCase();
+    const matchesQuery =
+      normalizedQuery.length === 0 ||
+      entry.name.toLowerCase().includes(normalizedQuery) ||
+      entry.note.toLowerCase().includes(normalizedQuery);
+
+    return matchesCategory && matchesQuery;
+  });
+
+  async function handleDelete(entryId: string) {
+    if (!firestore) {
+      setMessage("Firebase 설정을 먼저 확인해주세요.");
+      return;
+    }
+
+    setDeletingId(entryId);
+
+    try {
+      await deleteDoc(doc(firestore, "prototypeEntries", entryId));
+      setMessage("선택한 항목을 삭제했습니다.");
+    } catch {
+      setMessage("삭제 중 오류가 발생했습니다. Firestore 권한 규칙을 확인해주세요.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -192,8 +228,41 @@ export function PrototypeIntake() {
             </h2>
           </div>
           <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-muted">
-            {entries.length} items
+            {filteredEntries.length} items
           </span>
+        </div>
+
+        <div className="mt-6 space-y-4">
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium">검색</span>
+            <input
+              className="w-full rounded-2xl border border-card-border bg-white/70 px-4 py-3 outline-none transition focus:border-accent"
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              placeholder="이름 또는 메모로 검색"
+            />
+          </label>
+
+          <div className="flex flex-wrap gap-2">
+            {["전체", ...categories].map((category) => {
+              const isActive = activeCategory === category;
+
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                    isActive
+                      ? "bg-[#1f2a24] text-white"
+                      : "border border-card-border bg-white/65 text-foreground hover:bg-white"
+                  }`}
+                  onClick={() => setActiveCategory(category)}
+                >
+                  {category}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="mt-6 space-y-3">
@@ -209,7 +278,13 @@ export function PrototypeIntake() {
             </div>
           ) : null}
 
-          {entries.map((entry) => (
+          {!isLoadingEntries && entries.length > 0 && filteredEntries.length === 0 ? (
+            <div className="rounded-[1.5rem] border border-dashed border-card-border p-5 text-sm leading-7 text-muted">
+              현재 검색어나 필터에 맞는 항목이 없습니다.
+            </div>
+          ) : null}
+
+          {filteredEntries.map((entry) => (
             <article
               key={entry.id}
               className="rounded-[1.5rem] border border-card-border bg-white/60 p-5"
@@ -226,6 +301,16 @@ export function PrototypeIntake() {
               <p className="mt-4 text-sm leading-7 text-foreground/80">
                 {entry.note || "메모 없음"}
               </p>
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() => void handleDelete(entry.id)}
+                  disabled={deletingId === entry.id}
+                >
+                  {deletingId === entry.id ? "삭제 중..." : "삭제"}
+                </button>
+              </div>
             </article>
           ))}
         </div>
