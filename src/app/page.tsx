@@ -3,16 +3,16 @@ import { PrototypeNav } from "@/components/prototype-nav";
 
 const sections = [
   {
-    href: "/dashboard",
-    label: "Dashboard",
-    title: "운영 대시보드",
-    description: "카테고리 분포, 최근 7일 활동, 타임라인을 한눈에 확인합니다.",
+    href: "/admin",
+    label: "Admin",
+    title: "관리자 영역",
+    description: "연구자와 치료사가 항목을 설계하고 결과를 확인하는 공간입니다.",
   },
   {
-    href: "/workspace",
-    label: "Workspace",
-    title: "데이터 작업 공간",
-    description: "저장, 검색, 수정, 삭제를 수행하는 입력 중심 화면입니다.",
+    href: "/patient",
+    label: "Patient",
+    title: "환자 훈련 화면",
+    description: "환자가 실제 훈련 단계를 수행하는 단순화된 전용 화면입니다.",
   },
   {
     href: "/prototype.html",
@@ -35,11 +35,11 @@ export default function Home() {
           </div>
 
           <h1 className="max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-            입력 화면과 대시보드 화면을 분리한 프로토타입 앱 허브
+            관리자 영역과 환자 훈련 영역을 분리한 실험용 앱 허브
           </h1>
           <p className="mt-6 max-w-3xl text-base leading-8 text-muted sm:text-lg">
-            이제 루트 화면은 진입점 역할만 하고, 실제 작업은 `워크스페이스`,
-            분석은 `대시보드`로 분리되어 더 제품다운 흐름으로 확장됐습니다.
+            이제 루트 화면은 진입점 역할만 하고, 관리자는 설계와 분석을 담당하고
+            환자는 실제 훈련 플로우만 보게끔 구조를 나눴습니다.
           </p>
         </section>
 

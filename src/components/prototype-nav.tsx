@@ -2,8 +2,10 @@ import Link from "next/link";
 
 const links = [
   { href: "/", label: "홈" },
-  { href: "/dashboard", label: "대시보드" },
-  { href: "/workspace", label: "워크스페이스" },
+  { href: "/admin", label: "관리자" },
+  { href: "/patient", label: "환자 훈련" },
+  { href: "/dashboard", label: "관리 대시보드" },
+  { href: "/workspace", label: "관리 작업실" },
 ];
 
 export function PrototypeNav() {
