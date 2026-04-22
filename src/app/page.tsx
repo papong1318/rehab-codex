@@ -1,107 +1,63 @@
-import { getFirebaseStatus } from "@/lib/firebase";
-import { PrototypeIntake } from "@/components/prototype-intake";
+import Link from "next/link";
+import { PrototypeNav } from "@/components/prototype-nav";
+
+const sections = [
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+    title: "운영 대시보드",
+    description: "카테고리 분포, 최근 7일 활동, 타임라인을 한눈에 확인합니다.",
+  },
+  {
+    href: "/workspace",
+    label: "Workspace",
+    title: "데이터 작업 공간",
+    description: "저장, 검색, 수정, 삭제를 수행하는 입력 중심 화면입니다.",
+  },
+  {
+    href: "/prototype.html",
+    label: "Wireframe",
+    title: "정적 초안 문서",
+    description: "초기 정보 구조를 확인했던 HTML 프로토타입으로 이동합니다.",
+  },
+];
 
 export default function Home() {
-  const firebaseStatus = getFirebaseStatus();
-
   return (
-    <main className="hero-grid flex flex-1 items-center px-5 py-10 sm:px-8 lg:px-12">
-      <div className="mx-auto grid w-full max-w-6xl gap-6">
-        <div className="grid gap-6 lg:grid-cols-[1.35fr_0.85fr]">
-          <section className="glass-card fade-up rounded-[2rem] p-8 sm:p-10 lg:p-14">
-            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-card-border bg-white/65 px-4 py-2 text-sm text-muted">
-              <span className="h-2.5 w-2.5 rounded-full bg-accent" />
-              실험용 프로토타입 스타터
-            </div>
+    <main className="hero-grid flex flex-1 px-5 py-10 sm:px-8 lg:px-12">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        <PrototypeNav />
 
-            <div className="space-y-6">
-              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-                HTML 초안에서 시작해 React 앱으로 확장하고, Firebase와 Vercel까지 연결할 준비를 끝냈습니다.
-              </h1>
-              <p className="max-w-2xl text-base leading-8 text-muted sm:text-lg">
-                이 프로젝트는 빠르게 아이디어를 검증하기 위한 기본 구조입니다.
-                화면 초안은 정적 HTML로 먼저 잡고, 실제 기능은 Next.js App Router와
-                Firebase로 붙인 뒤, Vercel에 바로 배포할 수 있게 구성했습니다.
-              </p>
-            </div>
+        <section className="glass-card rounded-[2rem] p-8 sm:p-10 lg:p-14">
+          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-card-border bg-white/65 px-4 py-2 text-sm text-muted">
+            <span className="h-2.5 w-2.5 rounded-full bg-accent" />
+            Rehab Codex Hub
+          </div>
 
-            <div className="fade-up-delay mt-10 flex flex-col gap-4 sm:flex-row">
-              <a
-                className="inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong"
-                href="/prototype.html"
-              >
-                HTML 초안 보기
-              </a>
-              <a
-                className="inline-flex items-center justify-center rounded-full border border-card-border px-6 py-3 text-sm font-semibold transition hover:bg-white/55"
-                href="https://vercel.com/new"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Vercel 프로젝트 생성
-              </a>
-            </div>
+          <h1 className="max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
+            입력 화면과 대시보드 화면을 분리한 프로토타입 앱 허브
+          </h1>
+          <p className="mt-6 max-w-3xl text-base leading-8 text-muted sm:text-lg">
+            이제 루트 화면은 진입점 역할만 하고, 실제 작업은 `워크스페이스`,
+            분석은 `대시보드`로 분리되어 더 제품다운 흐름으로 확장됐습니다.
+          </p>
+        </section>
 
-            <div className="fade-up-delay-2 mt-12 grid gap-4 md:grid-cols-3">
-              <article className="rounded-[1.5rem] border border-card-border bg-white/55 p-5">
-                <p className="text-sm font-medium text-muted">1. Prototype</p>
-                <h2 className="mt-2 text-xl font-semibold">HTML Wireframe</h2>
-                <p className="mt-3 text-sm leading-7 text-muted">
-                  정보 구조와 화면 흐름을 정적 문서로 먼저 확인합니다.
-                </p>
-              </article>
-
-              <article className="rounded-[1.5rem] border border-card-border bg-white/55 p-5">
-                <p className="text-sm font-medium text-muted">2. Build</p>
-                <h2 className="mt-2 text-xl font-semibold">React + Next.js</h2>
-                <p className="mt-3 text-sm leading-7 text-muted">
-                  App Router 기반으로 컴포넌트를 쌓고 이후 기능을 붙이기 쉽습니다.
-                </p>
-              </article>
-
-              <article className="rounded-[1.5rem] border border-card-border bg-white/55 p-5">
-                <p className="text-sm font-medium text-muted">3. Ship</p>
-                <h2 className="mt-2 text-xl font-semibold">Firebase + Vercel</h2>
-                <p className="mt-3 text-sm leading-7 text-muted">
-                  Firestore 데이터 저장과 Vercel 배포 경로를 바로 이어갈 수 있습니다.
-                </p>
-              </article>
-            </div>
-          </section>
-
-          <aside className="fade-up-delay glass-card rounded-[2rem] p-7 sm:p-8">
-            <div className="rounded-[1.5rem] bg-[#1f2a24] p-6 text-[#f5f1e8]">
-              <p className="text-sm uppercase tracking-[0.24em] text-[#d8c7b3]">
-                Environment
-              </p>
-              <ul className="mt-5 space-y-3 text-sm leading-7">
-                <li>Framework: Next.js 16 + React 19</li>
-                <li>Styling: Tailwind CSS 4</li>
-                <li>Database: Firebase Firestore</li>
-                <li>Deploy: Vercel CLI ready</li>
-              </ul>
-            </div>
-
-            <div className="mt-6 rounded-[1.5rem] border border-card-border bg-white/55 p-6">
-              <p className="text-sm font-medium text-muted">Firebase 상태</p>
-              <p className="mt-2 text-2xl font-semibold">{firebaseStatus.label}</p>
+        <section className="grid gap-4 md:grid-cols-3">
+          {sections.map((section) => (
+            <Link
+              key={section.href}
+              href={section.href}
+              className="glass-card rounded-[1.75rem] p-6 transition hover:-translate-y-0.5"
+            >
+              <p className="text-sm font-medium text-muted">{section.label}</p>
+              <h2 className="mt-3 text-2xl font-semibold">{section.title}</h2>
               <p className="mt-3 text-sm leading-7 text-muted">
-                {firebaseStatus.description}
+                {section.description}
               </p>
-            </div>
-
-            <div className="mt-6 rounded-[1.5rem] border border-dashed border-card-border p-6">
-              <p className="text-sm font-medium text-muted">다음 할 일</p>
-              <ol className="mt-3 space-y-3 text-sm leading-7 text-foreground/85">
-                <li>1. 테스트 데이터를 저장해보기</li>
-                <li>2. 최근 저장 목록이 즉시 갱신되는지 확인하기</li>
-                <li>3. 다음 단계로 상세 보기나 필터 붙이기</li>
-              </ol>
-            </div>
-          </aside>
-        </div>
-
-        <PrototypeIntake />
+            </Link>
+          ))}
+        </section>
       </div>
     </main>
   );

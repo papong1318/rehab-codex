@@ -1,6 +1,7 @@
 # Prototype App Starter
 
 실험용 프로토타입 앱을 빠르게 시작하기 위한 `Next.js + Firebase + Vercel` 스타터입니다.
+입력 중심 `workspace`와 분석 중심 `dashboard`를 분리한 구조입니다.
 
 ## Stack
 
@@ -13,7 +14,11 @@
 ## 프로젝트 구조
 
 - `src/app/page.tsx`: 시작 화면
-- `src/components/prototype-intake.tsx`: Firestore 저장 테스트 폼
+- `src/app/dashboard/page.tsx`: 대시보드 페이지
+- `src/app/workspace/page.tsx`: 입력/관리 페이지
+- `src/hooks/use-prototype-entries.ts`: Firebase 인증 및 데이터 상태 공용 훅
+- `src/components/prototype-workspace.tsx`: Firestore 입력/관리 화면
+- `src/components/prototype-dashboard.tsx`: 활동 요약 대시보드
 - `src/lib/firebase.ts`: Firebase 앱/Firestore 초기화
 - `firestore.rules`: 익명 로그인 기준 Firestore 보안 규칙 예시
 - `public/prototype.html`: 정적 HTML 와이어프레임
