@@ -1,0 +1,549 @@
+.page {
+  --ink: #171725;
+  --muted: #6c6f80;
+  --paper: #f7f2e9;
+  --line: rgba(23, 23, 37, 0.11);
+  --panel: rgba(255, 255, 255, 0.72);
+  --stage: #151422;
+  --stage-2: #211c34;
+  --teal: #38d9c0;
+  --coral: #ff6f61;
+  --amber: #ffcb5b;
+  --blue: #5f8dff;
+  --violet: #9a78ff;
+  --shadow: 0 22px 54px rgba(34, 28, 47, 0.2);
+  --radius: 8px;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  color: var(--ink);
+  background:
+    linear-gradient(135deg, rgba(56, 217, 192, 0.2), transparent 28%),
+    linear-gradient(225deg, rgba(255, 111, 97, 0.14), transparent 32%),
+    linear-gradient(180deg, #fffaf1 0%, #f2eadc 100%);
+  font-family: var(--font-geist-sans), Pretendard, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px clamp(16px, 3vw, 42px);
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 250, 241, 0.74);
+  backdrop-filter: blur(16px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.brandMark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius);
+  color: #111827;
+  background: linear-gradient(135deg, var(--amber), var(--teal) 58%, var(--blue));
+  box-shadow: 0 10px 22px rgba(56, 217, 192, 0.24);
+  font-weight: 900;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: clamp(20px, 2.5vw, 34px);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.brand span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.homeButton {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid rgba(23, 23, 37, 0.14);
+  border-radius: var(--radius);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 22px rgba(34, 28, 47, 0.08);
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.shell {
+  width: min(1280px, 100%);
+  margin: 0 auto;
+  padding: clamp(14px, 3vw, 34px);
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: clamp(14px, 2.4vw, 26px);
+  align-items: stretch;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.dashboard {
+  padding: 18px;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.songCard {
+  display: grid;
+  gap: 12px;
+}
+
+.songCard h2 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.12;
+}
+
+.songCard p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.metaList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.metaList div,
+.stats div {
+  padding: 11px 12px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(23, 23, 37, 0.08);
+}
+
+.metaList small,
+.stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.metaList strong,
+.stats strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 18px;
+}
+
+.meter {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(23, 23, 37, 0.1);
+}
+
+.meter div {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--coral), var(--amber), var(--teal));
+  transition: width 0.18s ease;
+}
+
+.stats {
+  display: grid;
+  gap: 8px;
+}
+
+.stats div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stats strong {
+  margin: 0;
+  font-size: 22px;
+}
+
+.judgementCard {
+  min-height: 86px;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  border-radius: var(--radius);
+  color: #fff;
+  background: linear-gradient(135deg, rgba(154, 120, 255, 0.9), rgba(255, 111, 97, 0.86)), #201b2d;
+  text-align: center;
+}
+
+.judgementCard strong {
+  display: block;
+  font-size: clamp(24px, 4vw, 42px);
+  line-height: 1;
+}
+
+.judgementCard span {
+  display: block;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 13px;
+}
+
+.laneGuide {
+  display: grid;
+  gap: 8px;
+}
+
+.guideRow {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(23, 23, 37, 0.08);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.guideKey {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.guideRow strong {
+  font-size: 14px;
+}
+
+.guideRow span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.gameCard {
+  min-height: min(76vh, 820px);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.62));
+}
+
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.hud span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(23, 23, 37, 0.1);
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.hud strong {
+  color: var(--ink);
+}
+
+.stageWrap {
+  padding: clamp(10px, 2vw, 18px);
+  min-height: 0;
+}
+
+.stage {
+  --hit-y: 82%;
+  height: 100%;
+  min-height: 560px;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at 18% 5%, rgba(56, 217, 192, 0.28), transparent 24%),
+    radial-gradient(circle at 88% 12%, rgba(255, 111, 97, 0.22), transparent 20%),
+    linear-gradient(180deg, var(--stage) 0%, var(--stage-2) 100%);
+  background-size: 36px 36px, 36px 36px, auto, auto, auto;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.lanes {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.lane {
+  position: relative;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lane:last-child {
+  border-right: 0;
+}
+
+.lane::before {
+  content: "";
+  position: absolute;
+  inset: 0 10px;
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.05) 52%, transparent 100%);
+  opacity: 0.88;
+}
+
+.hitLine {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: var(--hit-y);
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--coral), var(--amber), var(--teal), var(--blue));
+  box-shadow: 0 0 28px rgba(255, 203, 91, 0.48);
+  z-index: 3;
+}
+
+.hitZone {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: calc(var(--hit-y) - 42px);
+  height: 86px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  z-index: 2;
+}
+
+.beatRuler {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.62;
+}
+
+.beatRuler i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.noteLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.note {
+  position: absolute;
+  width: min(68px, 15vw);
+  height: 30px;
+  left: calc((var(--lane) + 0.5) * 25%);
+  top: 0;
+  border-radius: 999px;
+  translate: -50% -50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.62), transparent 45%), var(--note-color);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18) inset, 0 10px 24px color-mix(in srgb, var(--note-color) 42%, transparent);
+  z-index: 4;
+}
+
+.note::after {
+  content: "";
+  position: absolute;
+  inset: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.padRow {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 18px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  z-index: 6;
+}
+
+.pad {
+  min-width: 0;
+  min-height: 70px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #fff;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02)), color-mix(in srgb, var(--pad-color) 52%, #12111f);
+  user-select: none;
+  touch-action: manipulation;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, border-color 0.08s ease;
+}
+
+.pad strong {
+  font-size: clamp(18px, 4vw, 30px);
+  letter-spacing: 0;
+}
+
+.pad span {
+  margin-top: 3px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 11px;
+}
+
+.pressed {
+  transform: translateY(3px) scale(0.98);
+  border-color: rgba(255, 255, 255, 0.52);
+  box-shadow: 0 0 34px color-mix(in srgb, var(--pad-color) 44%, transparent);
+}
+
+.stageMessage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 7;
+  padding: 24px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(21, 20, 34, 0.62), rgba(21, 20, 34, 0.22));
+}
+
+.messageCard {
+  width: min(440px, 100%);
+  padding: 22px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #fff;
+  background: rgba(18, 17, 31, 0.78);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+}
+
+.messageCard h2 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 46px);
+  line-height: 1.04;
+}
+
+.messageCard p {
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.5;
+}
+
+.messageCard button,
+.centerStop {
+  min-height: 54px;
+  margin-top: 18px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: var(--radius);
+  color: #0f172a;
+  background: linear-gradient(135deg, var(--amber), var(--teal));
+  font: inherit;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.centerStop {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 8;
+  min-height: 42px;
+  margin: 0;
+  padding: 0 18px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+@media (max-width: 940px) {
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard {
+    order: 2;
+  }
+
+  .gameCard {
+    min-height: 660px;
+  }
+}
+
+@media (max-width: 600px) {
+  .shell {
+    padding: 10px;
+  }
+
+  .topbar {
+    padding: 14px 12px;
+  }
+
+  .metaList {
+    grid-template-columns: 1fr;
+  }
+
+  .hud {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .stage {
+    min-height: 590px;
+  }
+
+  .padRow {
+    gap: 6px;
+    bottom: 12px;
+  }
+
+  .pad {
+    min-height: 64px;
+  }
+
+  .note {
+    width: 52px;
+    height: 28px;
+  }
+}
