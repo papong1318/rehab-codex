@@ -179,14 +179,12 @@ export default function FingerLiftGame() {
   const nextEvent = events.find((event) => !event.judged);
   const cueText = targetLevel > 0.72 ? "화면에서 멀리 떼기" : targetLevel > 0.32 ? "수직으로 조금 더 떼기" : "화면 가까이";
   const actionText = nextEvent?.type === "down" ? "마지막 C에서 화면을 다시 누르기" : "올라가는 소리에 맞춰 화면에서 떼기";
-  const targetPositionStyle = {
-    "--lift-offset": `${targetLevel * 68}%`,
-    "--line-offset": `${targetLevel * 78}%`,
-  } as React.CSSProperties;
-  const userPositionStyle = {
-    "--lift-offset": `${userLevel * 68}%`,
-    "--line-offset": `${userLevel * 78}%`,
-  } as React.CSSProperties;
+  const positionStyle = (level: number): React.CSSProperties => ({
+    bottom: `calc(64px + ${level * 68}%)`,
+    top: `${90 - level * 78}%`,
+  });
+  const targetPositionStyle = positionStyle(targetLevel);
+  const userPositionStyle = positionStyle(userLevel);
 
   const scalePoints = useMemo(() => {
     return SCALE.map((note, index) => {
@@ -481,7 +479,7 @@ export default function FingerLiftGame() {
                 <div
                   className={`${styles.feedback} ${styles[feedback.kind]}`}
                   key={feedback.id}
-                  style={{ "--line-offset": `${feedback.level * 78}%` } as React.CSSProperties}
+                  style={{ top: `${90 - feedback.level * 78}%` }}
                 >
                   <strong>{feedback.label}</strong>
                   <span>{feedback.detail}</span>

@@ -433,7 +433,7 @@
 .handLive {
   position: absolute;
   left: 50%;
-  bottom: calc(64px + var(--lift-offset, 0%));
+  bottom: 64px;
   width: 112px;
   height: 104px;
   translate: -50% 50%;
@@ -525,7 +525,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(90% - var(--line-offset, 0%));
+  top: 90%;
   height: 2px;
   background: rgba(255, 201, 74, 0.58);
 }
@@ -539,7 +539,7 @@
 .fingerDot {
   position: absolute;
   left: 62%;
-  top: calc(90% - var(--line-offset, 0%));
+  top: 90%;
   min-width: 74px;
   min-height: 42px;
   display: grid;
@@ -551,6 +551,7 @@
 
 .targetDot {
   left: 28%;
+  z-index: 4;
   color: #0f172a;
   background: var(--amber);
   box-shadow: 0 0 30px rgba(255, 201, 74, 0.3);
@@ -571,7 +572,7 @@
 .feedback {
   position: absolute;
   left: 50%;
-  top: calc(90% - var(--line-offset, 0%));
+  top: 90%;
   display: grid;
   place-items: center;
   min-width: 136px;
