@@ -31,6 +31,16 @@ type TouchFeedback = {
   kind: "perfect" | "great" | "good" | "bad" | "miss";
 };
 
+type Phase = {
+  id: "sync" | "metro" | "music";
+  title: string;
+  label: string;
+  description: string;
+  cue: string;
+  startBeat: number;
+  endBeat: number;
+};
+
 const BPM = 96;
 const BEAT = 60 / BPM;
 const TRAVEL_TIME = 1.85;
@@ -41,6 +51,35 @@ const LANE_COLORS = ["#38d9c0", "#ffcb5b", "#ff6f61", "#5f8dff"];
 const LANE_KEYS = ["d", "f", "j", "k"];
 const LANE_NOTES = [523.25, 659.25, 783.99, 987.77];
 const LANE_LABELS = ["검지", "중지", "약지", "소지"];
+const PHASES: Phase[] = [
+  {
+    id: "sync",
+    title: "1. 리듬 동조화",
+    label: "Entrainment",
+    description: "큰 박동과 단순한 순차 터치로 먼저 몸의 움직임을 박에 맞춥니다.",
+    cue: "pulse only",
+    startBeat: 0,
+    endBeat: 16,
+  },
+  {
+    id: "metro",
+    title: "2. 메트로놈",
+    label: "Metronome",
+    description: "강박과 약박 클릭을 분명히 제시해 일정한 손가락 타이밍을 안정화합니다.",
+    cue: "click guide",
+    startBeat: 16,
+    endBeat: 32,
+  },
+  {
+    id: "music",
+    title: "3. 음악 확장",
+    label: "Music",
+    description: "리듬 구조 위에 드럼, 베이스, 코드, 가이드톤을 얹어 음악 안에서 지속합니다.",
+    cue: "full groove",
+    startBeat: 32,
+    endBeat: 64,
+  },
+];
 
 function makeStats(): Stats {
   return {
@@ -64,23 +103,43 @@ function buildChart(): Note[] {
     [[0, 3], [0.5, 1], [1, 2], [2, 0], [2.5, 2], [3, 1]],
   ];
 
-  for (let bar = 0; bar < 16; bar += 1) {
+  for (let beat = 2; beat < 16; beat += 1) {
+    notes.push({
+      id: notes.length,
+      time: beat * BEAT,
+      lane: (beat - 2) % 4,
+      hit: false,
+      missed: false,
+    });
+  }
+
+  for (let beat = 16; beat < 32; beat += 0.5) {
+    notes.push({
+      id: notes.length,
+      time: beat * BEAT,
+      lane: Math.floor((beat - 16) * 2) % 4,
+      hit: false,
+      missed: false,
+    });
+  }
+
+  for (let bar = 0; bar < 8; bar += 1) {
     const pattern = barPatterns[bar % barPatterns.length];
     pattern.forEach(([offset, lane]) => {
       notes.push({
         id: notes.length,
-        time: (bar * 4 + offset) * BEAT,
+        time: (32 + bar * 4 + offset) * BEAT,
         lane,
         hit: false,
         missed: false,
       });
     });
 
-    if (bar === 7 || bar === 15) {
+    if (bar === 7) {
       [0, 1, 2, 3].forEach((lane, index) => {
         notes.push({
           id: notes.length,
-          time: (bar * 4 + 3.75 + index * 0.03) * BEAT,
+          time: (32 + bar * 4 + 3.75 + index * 0.03) * BEAT,
           lane,
           hit: false,
           missed: false,
@@ -90,6 +149,11 @@ function buildChart(): Note[] {
   }
 
   return notes.sort((a, b) => a.time - b.time);
+}
+
+function phaseForTime(time: number) {
+  const beat = Math.min(SONG_BEATS - 0.001, Math.max(0, time / BEAT));
+  return PHASES.find((phase) => beat >= phase.startBeat && beat < phase.endBeat) ?? PHASES[PHASES.length - 1];
 }
 
 function createAudioContext() {
@@ -164,10 +228,28 @@ function scheduleSong(ctx: AudioContext, out: AudioNode, chart: Note[], baseTime
   const bassPlan = [130.81, 110, 87.31, 98];
 
   for (let beat = 0; beat < SONG_BEATS; beat += 0.5) {
-    playNoise(ctx, out, baseTime + beat * BEAT, 0.045, beat % 1 === 0 ? 0.15 : 0.08, "highpass", 6200);
+    const t = baseTime + beat * BEAT;
+    if (beat < 16) {
+      if (beat % 1 === 0) {
+        const accent = beat % 4 === 0;
+        playTone(ctx, out, t, accent ? 330 : 247, 0.11, "sine", accent ? 0.26 : 0.18);
+        playTone(ctx, out, t + 0.012, 82.41, 0.16, "triangle", accent ? 0.18 : 0.1);
+      }
+    } else if (beat < 32) {
+      if (beat % 1 === 0) {
+        const accent = beat % 4 === 0;
+        playNoise(ctx, out, t, 0.04, accent ? 0.24 : 0.16, "highpass", accent ? 5200 : 3900);
+        playTone(ctx, out, t, accent ? 880 : 660, 0.045, "square", accent ? 0.16 : 0.1);
+      } else {
+        playNoise(ctx, out, t, 0.028, 0.07, "highpass", 6200);
+      }
+    } else {
+      playNoise(ctx, out, t, 0.045, beat % 1 === 0 ? 0.15 : 0.08, "highpass", 6200);
+    }
   }
 
   for (let beat = 0; beat < SONG_BEATS; beat += 1) {
+    if (beat < 32) continue;
     const t = baseTime + beat * BEAT;
     if (beat % 4 === 0 || beat % 4 === 2) {
       const osc = ctx.createOscillator();
@@ -188,7 +270,7 @@ function scheduleSong(ctx: AudioContext, out: AudioNode, chart: Note[], baseTime
     playTone(ctx, out, t, bassPlan[Math.floor(beat / 4) % bassPlan.length], BEAT * 0.42, "triangle", 0.18);
   }
 
-  for (let bar = 0; bar < 16; bar += 1) {
+  for (let bar = 8; bar < 16; bar += 1) {
     const t = baseTime + bar * 4 * BEAT;
     chordPlan[bar % chordPlan.length].forEach((freq, index) => {
       playTone(ctx, out, t + index * 0.012, freq, BEAT * 3.8, "sine", 0.16);
@@ -196,7 +278,15 @@ function scheduleSong(ctx: AudioContext, out: AudioNode, chart: Note[], baseTime
   }
 
   chart.forEach((note) => {
-    playTone(ctx, out, baseTime + note.time, LANE_NOTES[note.lane] / 2, 0.09, "square", 0.12);
+    const beat = note.time / BEAT;
+    const t = baseTime + note.time;
+    if (beat < 16) {
+      playTone(ctx, out, t, LANE_NOTES[note.lane] / 3, 0.12, "sine", 0.1);
+    } else if (beat < 32) {
+      playTone(ctx, out, t, LANE_NOTES[note.lane] / 2, 0.07, "square", 0.11);
+    } else {
+      playTone(ctx, out, t, LANE_NOTES[note.lane] / 2, 0.09, "square", 0.12);
+    }
   });
 }
 
@@ -221,6 +311,12 @@ export default function RhythmTapGame() {
     ? Math.round(((stats.perfect + stats.great * 0.74 + stats.good * 0.48) / totalPlayed) * 100)
     : 0;
   const progress = Math.min(100, (songTime / SONG_LENGTH) * 100);
+  const activePhase = phaseForTime(songTime);
+  const activeBeat = Math.min(SONG_BEATS, songTime / BEAT);
+  const phaseProgress = Math.min(
+    100,
+    Math.max(0, ((activeBeat - activePhase.startBeat) / (activePhase.endBeat - activePhase.startBeat)) * 100),
+  );
   const latestFeedbackByLane = useMemo(() => {
     const map = new Map<number, TouchFeedback>();
     feedbacks.forEach((feedback) => map.set(feedback.lane, feedback));
@@ -434,8 +530,8 @@ export default function RhythmTapGame() {
         <aside className={`${styles.panel} ${styles.dashboard}`}>
           <section className={styles.songCard}>
             <div>
-              <h2>Original Synth Cue No. 1</h2>
-              <p>브라우저에서 실시간 합성되는 96 BPM 루프입니다. 외부 음원이나 샘플 파일을 사용하지 않습니다.</p>
+              <h2>PSE Guided Rhythm Session</h2>
+              <p>리듬 동조화에서 시작해 메트로놈을 거친 뒤 음악으로 확장되는 96 BPM 세션입니다.</p>
             </div>
             <div className={styles.metaList}>
               <div><small>BPM</small><strong>96</strong></div>
@@ -444,6 +540,19 @@ export default function RhythmTapGame() {
               <div><small>Mode</small><strong>4 Lane</strong></div>
             </div>
             <div className={styles.meter}><div style={{ width: `${progress}%` }} /></div>
+            <section className={styles.phaseTrack} aria-label="PSE 단계">
+              {PHASES.map((phase) => (
+                <div
+                  className={`${styles.phaseStep} ${phase.id === activePhase.id ? styles.activePhase : ""}`}
+                  key={phase.id}
+                >
+                  <small>{phase.label}</small>
+                  <strong>{phase.title}</strong>
+                  <span>{phase.cue}</span>
+                  {phase.id === activePhase.id && <i style={{ width: `${phaseProgress}%` }} />}
+                </div>
+              ))}
+            </section>
           </section>
 
           <section className={styles.stats} aria-label="점수판">
@@ -474,11 +583,18 @@ export default function RhythmTapGame() {
         <section className={`${styles.panel} ${styles.gameCard}`}>
           <div className={styles.hud}>
             <span>Track <strong>{running ? "Playing" : "Ready"}</strong></span>
+            <span>Phase <strong>{activePhase.title}</strong></span>
             <span>Audio <strong>{audioRef.current ? "On" : "Ready"}</strong></span>
             <span>Best <strong>{stats.score.toLocaleString("ko-KR")}</strong></span>
           </div>
           <section className={styles.stageWrap}>
             <div className={styles.stage}>
+              <div className={`${styles.phaseBadge} ${styles[activePhase.id]}`}>
+                <small>{activePhase.label}</small>
+                <strong>{activePhase.title}</strong>
+                <span>{activePhase.description}</span>
+              </div>
+              <div className={`${styles.pulseCore} ${styles[activePhase.id]}`} aria-hidden="true" />
               <div className={styles.lanes}>
                 {LANE_LABELS.map((label, index) => (
                   <div
