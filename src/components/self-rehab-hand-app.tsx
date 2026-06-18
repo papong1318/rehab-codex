@@ -3,78 +3,81 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./self-rehab-hand-app.module.css";
 
-type GameId = "tap" | "lift" | "pinch";
+type GameId = "rhythm" | "lift" | "pinch";
 type CheckKey = "pain" | "fatigue" | "control" | "dizzy";
 
-type GameSpec = {
-  id: GameId;
-  name: string;
-  short: string;
-  technique: string;
+const games = {
+  rhythm: {
+    title: "Rhythm Tap Lab",
+    subtitle: "96 BPM 실시간 합성 루프",
+    mark: "♪",
+    mode: "RAS 리듬 동조",
+    bpm: 96,
+    accent: "#38d9c0",
+    alt: "#ffcb5b",
+    description: "노트가 하단 hit line에 닿는 순간 네 손가락 패드를 탭합니다.",
+  },
+  lift: {
+    title: "Finger Lift Score",
+    subtitle: "ascending and descending scale control",
+    mark: "↕",
+    mode: "PSE 음고-움직임 매핑",
+    bpm: 76,
+    accent: "#41d6b6",
+    alt: "#ff725e",
+    description: "상행 음계에서 손가락을 떼고, 하행 마지막 C에서 다시 붙입니다.",
+  },
+  pinch: {
+    title: "Pinch Crescendo",
+    subtitle: "fixed thumb and one moving finger",
+    mark: "⌁",
+    mode: "TIMP 크레센도 조절",
+    bpm: 68,
+    accent: "#f3a0eb",
+    alt: "#6f97ff",
+    description: "소리가 커지면 손가락을 멀리, 작아지면 엄지 쪽으로 돌아옵니다.",
+  },
+} satisfies Record<GameId, {
+  title: string;
+  subtitle: string;
+  mark: string;
+  mode: string;
   bpm: number;
   accent: string;
-  cue: string;
-  pattern: string[];
-  notes: number[];
-};
+  alt: string;
+  description: string;
+}>;
 
-const games: GameSpec[] = [
-  {
-    id: "tap",
-    name: "리듬탭루프",
-    short: "Rhythm Tap Loop",
-    technique: "RAS 기반 리듬 동조",
-    bpm: 96,
-    accent: "#18b7a4",
-    cue: "비트가 손가락 패드에 닿는 순간 누르기",
-    pattern: ["검", "중", "약", "소", "중", "약", "검", "소"],
-    notes: [392, 440, 494, 587, 440, 494, 392, 587],
-  },
-  {
-    id: "lift",
-    name: "핑거리프트스코어",
-    short: "Finger Lift Score",
-    technique: "PSE 기반 음고-움직임 매핑",
-    bpm: 76,
-    accent: "#ff8a5c",
-    cue: "상행 음계에서 손가락을 들고 하행 종지에서 내려놓기",
-    pattern: ["도", "레", "미", "파", "솔", "파", "미", "도"],
-    notes: [262, 294, 330, 349, 392, 349, 330, 262],
-  },
-  {
-    id: "pinch",
-    name: "핀치크레센도",
-    short: "Pinch Crescendo",
-    technique: "TIMP 기반 힘/거리 조절",
-    bpm: 68,
-    accent: "#7aa7ff",
-    cue: "커지는 소리에 맞춰 벌리고 작아지는 소리에 맞춰 모으기",
-    pattern: ["p", "mp", "mf", "f", "ff", "f", "mp", "p"],
-    notes: [247, 277, 311, 370, 415, 370, 277, 247],
-  },
+const laneColors = ["#38d9c0", "#ffcb5b", "#5f8dff", "#ff6f61"];
+const laneLabels = ["검지", "중지", "약지", "소지"];
+const rhythmChart = [0, 1, 2, 3, 1, 0, 2, 3, 0, 2, 1, 3, 0, 1, 2, 3];
+const scale = [
+  { name: "C", level: 0.08, freq: 261.63 },
+  { name: "D", level: 0.24, freq: 293.66 },
+  { name: "E", level: 0.4, freq: 329.63 },
+  { name: "F", level: 0.55, freq: 349.23 },
+  { name: "G", level: 0.72, freq: 392 },
+  { name: "A", level: 0.88, freq: 440 },
+  { name: "G", level: 0.72, freq: 392 },
+  { name: "E", level: 0.4, freq: 329.63 },
+  { name: "C", level: 0.08, freq: 261.63 },
+];
+const pinchMotion = [
+  { mark: "p", level: 0.08, freq: 246.94, gain: 0.05 },
+  { mark: "mp", level: 0.18, freq: 277.18, gain: 0.08 },
+  { mark: "mf", level: 0.34, freq: 311.13, gain: 0.13 },
+  { mark: "f", level: 0.58, freq: 369.99, gain: 0.22 },
+  { mark: "ff", level: 0.86, freq: 440, gain: 0.36 },
+  { mark: "f", level: 0.62, freq: 369.99, gain: 0.21 },
+  { mark: "mp", level: 0.24, freq: 277.18, gain: 0.08 },
+  { mark: "p", level: 0.08, freq: 246.94, gain: 0.045 },
 ];
 
-const fingerPads = [
-  { label: "검지", key: "1", color: "#18b7a4" },
-  { label: "중지", key: "2", color: "#ff8a5c" },
-  { label: "약지", key: "3", color: "#e7bd46" },
-  { label: "소지", key: "4", color: "#6f9dff" },
-];
-
-const tapOrder = [0, 1, 2, 3, 1, 2, 0, 3];
-
-const checkLabels: Record<CheckKey, string> = {
-  pain: "통증",
-  fatigue: "피로",
-  control: "손 조절감",
-  dizzy: "어지러움",
-};
-
-const checkOptions: Record<CheckKey, string[]> = {
-  pain: ["없음", "약간", "있음"],
-  fatigue: ["낮음", "보통", "높음"],
-  control: ["좋음", "흔들림", "어려움"],
-  dizzy: ["없음", "약간", "있음"],
+const checks: Record<CheckKey, { label: string; options: string[] }> = {
+  pain: { label: "통증", options: ["없음", "약간", "있음"] },
+  fatigue: { label: "피로", options: ["낮음", "보통", "높음"] },
+  control: { label: "손 조절감", options: ["좋음", "흔들림", "어려움"] },
+  dizzy: { label: "어지러움", options: ["없음", "약간", "있음"] },
 };
 
 const initialCheck: Record<CheckKey, string> = {
@@ -88,447 +91,529 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function formatTime(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  const rest = String(seconds % 60).padStart(2, "0");
-  return `${minutes}:${rest}`;
+function format(value: number) {
+  return value.toLocaleString("ko-KR");
 }
 
-function getAudioContext() {
+function createContext() {
   if (typeof window === "undefined") return null;
-  const AudioContextClass =
+  const AudioClass =
     window.AudioContext ??
     (window as unknown as { webkitAudioContext?: typeof AudioContext })
       .webkitAudioContext;
-  return AudioContextClass ? new AudioContextClass() : null;
+  return AudioClass ? new AudioClass() : null;
 }
 
-function playInstrument(frequency: number, duration = 0.12, gainValue = 0.11) {
-  const context = getAudioContext();
-  if (!context) return;
-  const now = context.currentTime;
-  const oscillator = context.createOscillator();
-  const overtone = context.createOscillator();
-  const gain = context.createGain();
-  const filter = context.createBiquadFilter();
-
-  oscillator.type = "triangle";
+function playTone(ctx: AudioContext, time: number, freq: number, duration: number, gainValue: number, type: OscillatorType = "triangle") {
+  const osc = ctx.createOscillator();
+  const overtone = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+  osc.type = type;
   overtone.type = "sine";
-  oscillator.frequency.setValueAtTime(frequency, now);
-  overtone.frequency.setValueAtTime(frequency * 2, now);
+  osc.frequency.setValueAtTime(freq, time);
+  overtone.frequency.setValueAtTime(freq * 2, time);
   filter.type = "lowpass";
-  filter.frequency.setValueAtTime(1400, now);
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(gainValue, now + 0.015);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  oscillator.connect(filter);
+  filter.frequency.setValueAtTime(1800 + gainValue * 2600, time);
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.exponentialRampToValueAtTime(gainValue, time + 0.018);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+  osc.connect(filter);
   overtone.connect(filter);
   filter.connect(gain);
-  gain.connect(context.destination);
-  oscillator.start(now);
-  overtone.start(now);
-  oscillator.stop(now + duration + 0.03);
-  overtone.stop(now + duration + 0.03);
+  gain.connect(ctx.destination);
+  osc.start(time);
+  overtone.start(time);
+  osc.stop(time + duration + 0.04);
+  overtone.stop(time + duration + 0.04);
+}
+
+function playNoise(ctx: AudioContext, time: number, duration: number, gainValue: number) {
+  const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let index = 0; index < data.length; index += 1) {
+    data[index] = (Math.random() * 2 - 1) * Math.pow(1 - index / data.length, 2);
+  }
+  const source = ctx.createBufferSource();
+  const filter = ctx.createBiquadFilter();
+  const gain = ctx.createGain();
+  source.buffer = buffer;
+  filter.type = "highpass";
+  filter.frequency.setValueAtTime(5200, time);
+  gain.gain.setValueAtTime(gainValue, time);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  source.start(time);
+  source.stop(time + duration);
 }
 
 export default function SelfRehabHandApp() {
-  const [gameId, setGameId] = useState<GameId>("tap");
+  const [gameId, setGameId] = useState<GameId>("rhythm");
   const [running, setRunning] = useState(false);
   const [beat, setBeat] = useState(0);
   const [score, setScore] = useState(0);
+  const [combo, setCombo] = useState(0);
   const [hits, setHits] = useState(0);
   const [attempts, setAttempts] = useState(0);
-  const [combo, setCombo] = useState(0);
-  const [sessionSeconds, setSessionSeconds] = useState(0);
-  const [offsets, setOffsets] = useState<number[]>([]);
-  const [pressedPad, setPressedPad] = useState<number | null>(null);
-  const [liftPressed, setLiftPressed] = useState(true);
-  const [pinchValue, setPinchValue] = useState(30);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [checks, setChecks] = useState(initialCheck);
-  const beatStartedAt = useRef(0);
-  const pointerMap = useRef(new Map<number, { x: number; y: number }>());
+  const [judgement, setJudgement] = useState("READY");
+  const [detail, setDetail] = useState("start the musical cue");
+  const [pressedLane, setPressedLane] = useState<number | null>(null);
+  const [fingerDown, setFingerDown] = useState(false);
+  const [pinchLevel, setPinchLevel] = useState(0.08);
+  const [selfCheck, setSelfCheck] = useState(initialCheck);
+  const [checkOpen, setCheckOpen] = useState(false);
+  const audioRef = useRef<AudioContext | null>(null);
+  const startedAt = useRef(0);
+  const pointerId = useRef<number | null>(null);
 
-  const game = games.find((item) => item.id === gameId) ?? games[0];
-  const beatMs = Math.round(60000 / game.bpm);
+  const game = games[gameId];
   const accuracy = attempts ? Math.round((hits / attempts) * 100) : 0;
-  const avgOffset = offsets.length
-    ? Math.round(offsets.reduce((sum, value) => sum + value, 0) / offsets.length)
-    : 0;
-  const currentNote = game.notes[beat % game.notes.length];
-  const expectedTap = tapOrder[beat % tapOrder.length];
-  const pinchTarget = gameId === "pinch" ? 26 + Math.sin((beat / 8) * Math.PI) * 46 : 30;
+  const stepMs = 60000 / game.bpm;
+  const currentScale = scale[beat % scale.length];
+  const currentPinch = pinchMotion[beat % pinchMotion.length];
+  const expectedLane = rhythmChart[beat % rhythmChart.length];
 
   const restScore = useMemo(() => {
     let risk = 0;
-    if (checks.pain === "약간") risk += 1;
-    if (checks.pain === "있음") risk += 2;
-    if (checks.fatigue === "보통") risk += 1;
-    if (checks.fatigue === "높음") risk += 2;
-    if (checks.control === "흔들림") risk += 1;
-    if (checks.control === "어려움") risk += 2;
-    if (checks.dizzy === "약간") risk += 1;
-    if (checks.dizzy === "있음") risk += 3;
-    if (attempts >= 10 && accuracy < 55) risk += 1;
+    if (selfCheck.pain === "약간") risk += 1;
+    if (selfCheck.pain === "있음") risk += 2;
+    if (selfCheck.fatigue === "보통") risk += 1;
+    if (selfCheck.fatigue === "높음") risk += 2;
+    if (selfCheck.control === "흔들림") risk += 1;
+    if (selfCheck.control === "어려움") risk += 2;
+    if (selfCheck.dizzy === "약간") risk += 1;
+    if (selfCheck.dizzy === "있음") risk += 3;
+    if (attempts >= 12 && accuracy < 55) risk += 1;
     return risk;
-  }, [accuracy, attempts, checks]);
+  }, [accuracy, attempts, selfCheck]);
 
-  const restState =
-    restScore >= 4 ? "휴식 필요" : restScore >= 2 ? "휴식 권장" : "진행 가능";
+  const restText = restScore >= 4 ? "휴식 필요" : restScore >= 2 ? "휴식 권장" : "진행 가능";
 
   useEffect(() => {
     if (!running) return;
-    beatStartedAt.current = window.performance.now();
-    const beatTimer = window.setInterval(() => {
+    const timer = window.setInterval(() => {
       setBeat((value) => {
-        const next = (value + 1) % game.pattern.length;
-        playInstrument(game.notes[next], gameId === "pinch" ? 0.18 : 0.1, gameId === "pinch" ? 0.08 + next * 0.009 : 0.1);
+        const next = value + 1;
+        cueBeat(next);
+        if (gameId === "pinch") judgePinchSample(next);
         return next;
       });
-      beatStartedAt.current = window.performance.now();
-    }, beatMs);
-    const clockTimer = window.setInterval(() => {
-      setSessionSeconds((value) => value + 1);
-    }, 1000);
-    return () => {
-      window.clearInterval(beatTimer);
-      window.clearInterval(clockTimer);
-    };
-  }, [beatMs, game.notes, game.pattern.length, gameId, running]);
+    }, stepMs);
+    return () => window.clearInterval(timer);
+  }, [gameId, running, stepMs, pinchLevel]);
 
-  function switchGame(nextGame: GameId) {
-    setGameId(nextGame);
-    setRunning(false);
-    setBeat(0);
-    setScore(0);
-    setHits(0);
-    setAttempts(0);
-    setCombo(0);
-    setOffsets([]);
-    setPressedPad(null);
-    setLiftPressed(true);
-    setPinchValue(30);
-    pointerMap.current.clear();
+  function ensureAudio() {
+    if (!audioRef.current || audioRef.current.state === "closed") {
+      audioRef.current = createContext();
+    }
+    if (audioRef.current?.state === "suspended") {
+      void audioRef.current.resume();
+    }
+    return audioRef.current;
   }
 
-  function resetSession() {
-    switchGame(gameId);
-    setSessionSeconds(0);
-  }
-
-  function toggleRunning() {
-    if (!running && restScore >= 4) {
-      setDrawerOpen(true);
-      playInstrument(146, 0.18, 0.07);
+  function cueBeat(nextBeat = beat) {
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const now = ctx.currentTime + 0.01;
+    if (gameId === "rhythm") {
+      const lane = rhythmChart[nextBeat % rhythmChart.length];
+      playTone(ctx, now, [392, 494, 587, 659][lane], 0.11, 0.12, "square");
+      if (nextBeat % 2 === 0) playNoise(ctx, now + 0.02, 0.04, 0.045);
       return;
     }
-    beatStartedAt.current = window.performance.now();
-    setRunning((value) => !value);
-    playInstrument(currentNote, 0.12, 0.1);
+    if (gameId === "lift") {
+      const note = scale[nextBeat % scale.length];
+      playTone(ctx, now, note.freq, 0.2, note.level > 0.7 ? 0.24 : 0.16);
+      return;
+    }
+    const motion = pinchMotion[nextBeat % pinchMotion.length];
+    playCrescendoTone(ctx, now, motion.freq, motion.gain, motion.level);
   }
 
-  function success(points: number, offset: number) {
+  function playCrescendoTone(ctx: AudioContext, time: number, freq: number, gainValue: number, level: number) {
+    const osc = ctx.createOscillator();
+    const sub = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    const delay = ctx.createDelay();
+    const feedback = ctx.createGain();
+    osc.type = "triangle";
+    sub.type = "sine";
+    osc.frequency.setValueAtTime(freq, time);
+    sub.frequency.setValueAtTime(freq / 2, time);
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(650 + level * 3900, time);
+    delay.delayTime.setValueAtTime(0.085, time);
+    feedback.gain.setValueAtTime(0.08 + level * 0.08, time);
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.exponentialRampToValueAtTime(gainValue, time + 0.045);
+    gain.gain.linearRampToValueAtTime(gainValue * 0.72, time + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.38);
+    osc.connect(filter);
+    sub.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    gain.connect(delay);
+    delay.connect(feedback);
+    feedback.connect(ctx.destination);
+    osc.start(time);
+    sub.start(time);
+    osc.stop(time + 0.43);
+    sub.stop(time + 0.43);
+  }
+
+  function testSound() {
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const now = ctx.currentTime + 0.03;
+    if (gameId === "pinch") {
+      pinchMotion.forEach((note, index) => {
+        playCrescendoTone(ctx, now + index * 0.16, note.freq, note.gain, note.level);
+      });
+      setJudgement("SOUND");
+      setDetail("p → ff → p 강약 테스트");
+      return;
+    }
+    if (gameId === "lift") {
+      scale.forEach((note, index) => playTone(ctx, now + index * 0.11, note.freq, 0.14, 0.16));
+    } else {
+      rhythmChart.slice(0, 8).forEach((lane, index) => playTone(ctx, now + index * 0.1, [392, 494, 587, 659][lane], 0.08, 0.11, "square"));
+    }
+    setJudgement("SOUND");
+    setDetail("musical cue test");
+  }
+
+  function startGame() {
+    if (restScore >= 4) {
+      setCheckOpen(true);
+      setJudgement("REST");
+      setDetail("오늘은 휴식 후 다시 시도하세요.");
+      return;
+    }
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    startedAt.current = ctx.currentTime;
+    setRunning(true);
+    setBeat(0);
+    setScore(0);
+    setCombo(0);
+    setHits(0);
+    setAttempts(0);
+    setJudgement("READY");
+    setDetail(game.description);
+    cueBeat(0);
+  }
+
+  function stopGame() {
+    setRunning(false);
+    audioRef.current?.close();
+    audioRef.current = null;
+  }
+
+  function switchGame(next: GameId) {
+    stopGame();
+    setGameId(next);
+    setBeat(0);
+    setScore(0);
+    setCombo(0);
+    setHits(0);
+    setAttempts(0);
+    setJudgement("READY");
+    setDetail(games[next].description);
+    setFingerDown(false);
+    setPinchLevel(0.08);
+  }
+
+  function award(points: number, label = "GREAT") {
+    setScore((value) => value + points + Math.min(combo * 7, 180));
+    setCombo((value) => value + 1);
     setHits((value) => value + 1);
     setAttempts((value) => value + 1);
-    setCombo((value) => value + 1);
-    setScore((value) => value + points + Math.min(combo * 12, 240));
-    setOffsets((value) => [...value.slice(-16), Math.round(Math.abs(offset))]);
-    playInstrument(currentNote * 1.5, 0.1, 0.12);
+    setJudgement(label);
+    setDetail(`+${points}`);
   }
 
-  function miss() {
-    setAttempts((value) => value + 1);
+  function miss(copy = "try again") {
     setCombo(0);
-    playInstrument(130, 0.14, 0.08);
+    setAttempts((value) => value + 1);
+    setJudgement("MISS");
+    setDetail(copy);
+    const ctx = ensureAudio();
+    if (ctx) playTone(ctx, ctx.currentTime, 92, 0.1, 0.1, "sawtooth");
   }
 
-  function beatOffset() {
-    const raw = window.performance.now() - beatStartedAt.current;
-    return Math.min(raw, Math.abs(beatMs - raw));
-  }
-
-  function handleTap(lane: number) {
-    if (!running || gameId !== "tap") return;
-    setPressedPad(lane);
-    window.setTimeout(() => setPressedPad(null), 180);
-    const offset = beatOffset();
-    if (lane === expectedTap && offset < Math.min(240, beatMs * 0.42)) {
-      success(150, offset);
+  function tapLane(lane: number) {
+    setPressedLane(lane);
+    window.setTimeout(() => setPressedLane(null), 120);
+    if (!running || gameId !== "rhythm") return;
+    if (lane === expectedLane) {
+      award(650, lane === rhythmChart[(beat + 1) % rhythmChart.length] ? "PERFECT" : "GREAT");
+      cueHit(lane);
     } else {
-      miss();
+      miss("wrong lane");
     }
   }
 
-  function handleLiftDown(event: React.PointerEvent<HTMLButtonElement>) {
+  function cueHit(lane: number) {
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    playTone(ctx, ctx.currentTime, [784, 880, 988, 1175][lane], 0.1, 0.16);
+  }
+
+  function handleLiftDown(event: React.PointerEvent<HTMLDivElement>) {
+    pointerId.current = event.pointerId;
     event.currentTarget.setPointerCapture(event.pointerId);
-    setLiftPressed(true);
+    setFingerDown(true);
     if (!running || gameId !== "lift") return;
-    const shouldPress = beat === 0 || beat >= 5;
-    shouldPress ? success(125, beatOffset()) : miss();
+    const shouldTouch = beat % scale.length >= 6 || beat % scale.length === 0;
+    shouldTouch ? award(720, "DOWN") : miss("release on ascent");
   }
 
   function handleLiftUp() {
-    setLiftPressed(false);
+    setFingerDown(false);
     if (!running || gameId !== "lift") return;
-    const shouldLift = beat >= 1 && beat <= 4;
-    shouldLift ? success(135, beatOffset()) : miss();
+    const shouldLift = beat % scale.length >= 1 && beat % scale.length <= 5;
+    shouldLift ? award(820, "LIFT") : miss("touch at final C");
   }
 
-  function updatePinch(event: React.PointerEvent<HTMLDivElement>) {
-    if (gameId !== "pinch") return;
+  function setPinchFromPointer(event: React.PointerEvent<HTMLElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
-    pointerMap.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    const points = Array.from(pointerMap.current.values());
-    let nextValue = pinchValue;
-    if (points.length >= 2) {
-      const dx = points[0].x - points[1].x;
-      const dy = points[0].y - points[1].y;
-      nextValue = clamp((Math.sqrt(dx * dx + dy * dy) / rect.width) * 100, 12, 88);
-    } else {
-      nextValue = clamp(((event.clientX - rect.left) / rect.width) * 100, 12, 88);
-    }
-    setPinchValue(nextValue);
-    if (!running) return;
-    const diff = Math.abs(nextValue - pinchTarget);
-    if (diff < 7) success(115, diff * 18);
+    const next = clamp((event.clientX - rect.left) / rect.width, 0.06, 0.92);
+    setPinchLevel(next);
   }
 
-  function clearPointer(event: React.PointerEvent<HTMLDivElement>) {
-    pointerMap.current.delete(event.pointerId);
+  function judgePinchSample(nextBeat: number) {
+    const target = pinchMotion[nextBeat % pinchMotion.length].level;
+    const diff = Math.abs(pinchLevel - target);
+    if (diff < 0.08) award(92, "PERFECT");
+    else if (diff < 0.18) award(58, "GOOD");
+    else miss(`distance error ${Math.round(diff * 100)}%`);
   }
 
-  function renderGameSurface() {
+  function renderStage() {
     if (gameId === "lift") {
       return (
-        <div className={styles.liftStage}>
-          <div className={styles.scaleArc}>
-            {game.pattern.map((note, index) => (
-              <span
-                key={`${note}-${index}`}
-                className={index === beat ? styles.activeScaleNote : ""}
-                style={{ "--rise": `${index <= 4 ? index * 12 : (8 - index) * 12}px` } as React.CSSProperties}
-              >
-                {note}
-              </span>
-            ))}
+        <section className={styles.liftArea}>
+          <div className={styles.liftMeter}>
+            <span className={styles.targetLine} style={{ "--level": currentScale.level } as React.CSSProperties} />
+            <span className={styles.fingerLine} style={{ "--level": fingerDown ? 0.08 : 0.88 } as React.CSSProperties} />
+            <em className={styles.meterTop}>Lift</em>
+            <em className={styles.meterBottom}>Touch</em>
           </div>
-          <button
-            className={`${styles.liftPad} ${liftPressed ? styles.liftPadPressed : ""}`}
-            type="button"
+          <div
+            className={styles.fingerPad}
             onPointerDown={handleLiftDown}
             onPointerUp={handleLiftUp}
             onPointerCancel={handleLiftUp}
           >
-            <span>{liftPressed ? "누름" : "들기"}</span>
-            <strong>{beat >= 1 && beat <= 4 ? "Lift" : "Touch"}</strong>
-          </button>
-        </div>
+            <svg className={styles.tracePath} viewBox="0 0 600 390" aria-hidden="true">
+              <polyline points={scale.map((note, index) => `${34 + index * 64},${360 - note.level * 320}`).join(" ")} />
+            </svg>
+            <span className={styles.targetDot} style={{ "--target": currentScale.level } as React.CSSProperties}>{currentScale.name}</span>
+            <span className={`${styles.fingerDot} ${fingerDown ? "" : styles.off}`} style={{ "--finger": fingerDown ? 0.08 : 0.88 } as React.CSSProperties}>
+              {fingerDown ? "Touch" : "Lift"}
+            </span>
+          </div>
+        </section>
       );
     }
 
     if (gameId === "pinch") {
+      const target = currentPinch.level;
       return (
-        <div
+        <section
           className={styles.pinchStage}
-          onPointerDown={updatePinch}
-          onPointerMove={updatePinch}
-          onPointerUp={clearPointer}
-          onPointerCancel={clearPointer}
+          onPointerDown={(event) => {
+            pointerId.current = event.pointerId;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            setPinchFromPointer(event);
+          }}
+          onPointerMove={(event) => {
+            if (pointerId.current === event.pointerId) setPinchFromPointer(event);
+          }}
+          onPointerUp={() => { pointerId.current = null; }}
+          onPointerCancel={() => { pointerId.current = null; }}
         >
-          <div className={styles.crescendoBeam}>
-            {game.pattern.map((mark, index) => (
-              <span
-                key={`${mark}-${index}`}
-                className={index === beat ? styles.activeDynamic : ""}
-                style={{ "--index": index } as React.CSSProperties}
-              >
-                {mark}
-              </span>
-            ))}
+          <div className={styles.phaseCard}>
+            <div>
+              <strong>{beat % pinchMotion.length <= 4 ? "Crescendo" : "Decrescendo"}</strong>
+              <span>{currentPinch.mark} · 음량 {Math.round(currentPinch.gain * 100)}%</span>
+            </div>
+            <b>{Math.round(Math.abs(pinchLevel - target) * 100)}%</b>
           </div>
-          <div className={styles.pinchRail}>
-            <span className={styles.thumbAnchor}>엄지</span>
-            <span
-              className={styles.targetRing}
-              style={{ left: `${pinchTarget}%` }}
-            />
-            <span
-              className={styles.fingerDot}
-              style={{ left: `${pinchValue}%` }}
-            >
-              손가락
-            </span>
+          <svg className={styles.motionGuide} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path className={styles.guidePath} d="M 12 76 Q 48 12 88 26" />
+            <path className={styles.guideFill} d="M 12 76 Q 48 12 88 26" style={{ strokeDashoffset: `${100 - target * 100}` }} />
+          </svg>
+          <div className={styles.handFigure}>
+            <span className={styles.wrist} />
+            <span className={styles.palm} />
+            <span className={styles.middleFinger} />
+            <span className={styles.ringFinger} />
+            <span className={styles.indexFinger} style={{ "--level": pinchLevel } as React.CSSProperties} />
+            <span className={styles.thumbShape} />
           </div>
-        </div>
+          <span className={styles.thumbDot}>엄지</span>
+          <span className={styles.targetPinchDot} style={{ "--level": target } as React.CSSProperties}>목표</span>
+          <span className={styles.touchDot} style={{ "--level": pinchLevel } as React.CSSProperties}>손가락</span>
+        </section>
       );
     }
 
     return (
-      <div className={styles.tapStage}>
-        {fingerPads.map((pad, index) => (
-          <button
-            key={pad.label}
-            className={`${styles.fingerPad} ${expectedTap === index ? styles.expectedPad : ""} ${
-              pressedPad === index ? styles.pressedPad : ""
-            }`}
-            style={{ "--pad": pad.color } as React.CSSProperties}
-            type="button"
-            onPointerDown={() => handleTap(index)}
-          >
-            <span className={styles.padKey}>{pad.key}</span>
-            <strong>{pad.label}</strong>
-            <i>{game.pattern[index]}</i>
-          </button>
+      <section className={styles.rhythmStage}>
+        <div className={styles.lanes}>
+          {laneLabels.map((label, index) => (
+            <span
+              key={label}
+              className={`${styles.lane} ${expectedLane === index ? styles.activeLane : ""}`}
+              style={{ "--lane-color": laneColors[index] } as React.CSSProperties}
+            />
+          ))}
+        </div>
+        <span className={styles.hitZone} />
+        <span className={styles.hitLine} />
+        {rhythmChart.slice(0, 10).map((lane, index) => (
+          <span
+            key={`${lane}-${index}`}
+            className={`${styles.note} ${index === beat % rhythmChart.length ? styles.currentNote : ""}`}
+            style={{
+              "--lane": lane,
+              "--note-color": laneColors[lane],
+              "--delay": index,
+            } as React.CSSProperties}
+          />
         ))}
-      </div>
+        <div className={styles.padRow}>
+          {laneLabels.map((label, index) => (
+            <button
+              key={label}
+              className={`${styles.pad} ${pressedLane === index ? styles.pressed : ""}`}
+              style={{ "--pad-color": laneColors[index] } as React.CSSProperties}
+              type="button"
+              onPointerDown={() => tapLane(index)}
+            >
+              <strong>{index + 1}</strong>
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
     );
   }
 
   return (
-    <main className={styles.app} style={{ "--accent": game.accent } as React.CSSProperties}>
+    <main className={styles.page} style={{ "--accent": game.accent, "--alt": game.alt } as React.CSSProperties}>
+      <header className={styles.topbar}>
+        <div className={styles.brand}>
+          <span className={styles.brandMark}>{game.mark}</span>
+          <div>
+            <h1>{game.title}</h1>
+            <span>{game.subtitle}</span>
+          </div>
+        </div>
+        <div className={styles.transport}>
+          <button className={styles.primaryButton} type="button" onClick={startGame}>Start</button>
+          <button type="button" onClick={testSound}>♪</button>
+          <button type="button" onClick={stopGame}>Ⅱ</button>
+          <button type="button" onClick={startGame}>↺</button>
+        </div>
+      </header>
+
       <section className={styles.shell}>
-        <aside className={styles.leftPanel}>
-          <div className={styles.brand}>
-            <span className={styles.logoMark}>♪</span>
-            <div>
-              <p>RethmHands</p>
-              <h1>{game.name}</h1>
-            </div>
-          </div>
-
-          <div className={styles.gameSwitch} aria-label="게임 선택">
-            {games.map((item) => (
-              <button
-                key={item.id}
-                className={item.id === gameId ? styles.activeGame : ""}
-                type="button"
-                onClick={() => switchGame(item.id)}
-              >
-                <strong>{item.name}</strong>
-                <span>{item.technique}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className={styles.sessionCard}>
-            <span>세션</span>
-            <strong>{formatTime(sessionSeconds)}</strong>
-            <p>{game.cue}</p>
-          </div>
-        </aside>
-
-        <section className={styles.stagePanel} aria-label={`${game.name} 가로형 훈련 화면`}>
-          <div className={styles.stageHeader}>
-            <div>
-              <span>{game.short}</span>
-              <h2>{game.technique}</h2>
-            </div>
-            <div className={styles.metronome}>
-              <span className={running ? styles.metronomePulse : ""}>{game.bpm}</span>
-              <small>BPM</small>
-            </div>
-          </div>
-
-          <div className={styles.musicStaff} aria-hidden="true">
-            <div className={styles.staffLines}>
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className={styles.beatSequence}>
-              {game.pattern.map((label, index) => (
-                <span
-                  key={`${label}-${index}`}
-                  className={index === beat ? styles.activeBeat : ""}
+        <aside className={styles.dashboard}>
+          <section className={styles.songCard}>
+            <h2>{game.mode}</h2>
+            <p>{game.description}</p>
+            <div className={styles.gameTabs}>
+              {(Object.keys(games) as GameId[]).map((id) => (
+                <button
+                  key={id}
+                  className={id === gameId ? styles.activeTab : ""}
+                  type="button"
+                  onClick={() => switchGame(id)}
                 >
-                  {label}
-                </span>
+                  {games[id].title}
+                </button>
               ))}
             </div>
-            <div className={styles.waveform}>
-              {Array.from({ length: 34 }).map((_, index) => (
-                <i
+            <div className={styles.metaList}>
+              <div><small>BPM</small><strong>{game.bpm}</strong></div>
+              <div><small>Mode</small><strong>{gameId === "rhythm" ? "4 Lane" : gameId === "lift" ? "Release" : "Cresc."}</strong></div>
+              <div><small>Score</small><strong>{format(score)}</strong></div>
+              <div><small>Rest</small><strong>{restText}</strong></div>
+            </div>
+            <div className={styles.progress}><span style={{ width: `${Math.min(100, (beat % 16) * 6.25)}%` }} /></div>
+          </section>
+
+          <section className={styles.stats}>
+            <div><span>Score</span><strong>{format(score)}</strong></div>
+            <div><span>Combo</span><strong>{combo}</strong></div>
+            <div><span>Accuracy</span><strong>{accuracy}%</strong></div>
+            <div><span>Hits</span><strong>{hits}/{attempts}</strong></div>
+          </section>
+
+          <section className={styles.judgeCard}>
+            <strong>{judgement}</strong>
+            <span>{detail}</span>
+          </section>
+
+          <section className={`${styles.checkPanel} ${checkOpen ? styles.openCheck : ""}`}>
+            <button type="button" onClick={() => setCheckOpen((value) => !value)}>세션 후 상태 기록</button>
+            <div>
+              {(Object.keys(checks) as CheckKey[]).map((key) => (
+                <label key={key}>
+                  <span>{checks[key].label}</span>
+                  <select value={selfCheck[key]} onChange={(event) => setSelfCheck((value) => ({ ...value, [key]: event.target.value }))}>
+                    {checks[key].options.map((option) => <option key={option}>{option}</option>)}
+                  </select>
+                </label>
+              ))}
+            </div>
+          </section>
+        </aside>
+
+        <section className={styles.gameCard}>
+          <div className={styles.hud}>
+            <span>Track <strong>{running ? "Playing" : "Ready"}</strong></span>
+            <span>Audio <strong>{audioRef.current ? "On" : "Ready"}</strong></span>
+            <span>Phrase <strong>{(beat % 8) + 1}/8</strong></span>
+            <span>Best <strong>{format(score)}</strong></span>
+          </div>
+          <section className={styles.scorePanel}>
+            <svg className={styles.scoreBoard} viewBox="0 0 720 160" aria-label="악보">
+              {[0, 1, 2, 3, 4].map((line) => (
+                <line className={styles.staffLine} key={line} x1="24" x2="696" y1={42 + line * 16} y2={42 + line * 16} />
+              ))}
+              <polyline
+                className={styles.phrasePath}
+                points={(gameId === "pinch" ? pinchMotion : scale).map((note, index) => `${44 + index * 84},${128 - note.level * 86}`).join(" ")}
+              />
+              {(gameId === "pinch" ? pinchMotion : scale).map((note, index) => (
+                <ellipse
+                  className={`${styles.noteHead} ${index === beat % (gameId === "pinch" ? pinchMotion.length : scale.length) ? styles.playNote : ""}`}
                   key={index}
-                  style={{ "--h": `${18 + Math.abs(Math.sin((index + beat) * 0.68)) * 54}px` } as React.CSSProperties}
+                  cx={44 + index * 84}
+                  cy={128 - note.level * 86}
+                  rx="10"
+                  ry="7"
                 />
               ))}
-            </div>
-          </div>
-
-          <div className={styles.playSurface}>{renderGameSurface()}</div>
-
-          <div className={styles.transport}>
-            <button type="button" onClick={resetSession}>
-              다시하기
-            </button>
-            <button className={styles.playButton} type="button" onClick={toggleRunning}>
-              {running ? "일시정지" : restScore >= 4 ? "휴식 필요" : "시작"}
-            </button>
-            <button type="button" onClick={() => setDrawerOpen((value) => !value)}>
-              휴식 체크
-            </button>
-          </div>
+              {gameId === "pinch" && (
+                <>
+                  <path className={styles.hairpin} d="M 52 136 L 360 96 L 668 136" />
+                  <text className={styles.hairpinLabel} x="52" y="150">p</text>
+                  <text className={styles.hairpinLabel} x="342" y="88">ff</text>
+                  <text className={styles.hairpinLabel} x="652" y="150">p</text>
+                </>
+              )}
+            </svg>
+          </section>
+          <section className={styles.gameStage}>{renderStage()}</section>
         </section>
-
-        <aside className={styles.rightPanel}>
-          <div className={styles.scoreGrid}>
-            <div>
-              <span>점수</span>
-              <strong>{score}</strong>
-            </div>
-            <div>
-              <span>정확도</span>
-              <strong>{accuracy}%</strong>
-            </div>
-            <div>
-              <span>콤보</span>
-              <strong>{combo}</strong>
-            </div>
-            <div>
-              <span>오차</span>
-              <strong>{avgOffset}ms</strong>
-            </div>
-          </div>
-
-          <div className={`${styles.restCard} ${restScore >= 4 ? styles.restDanger : restScore >= 2 ? styles.restWarn : ""}`}>
-            <span>현재 상태</span>
-            <strong>{restState}</strong>
-            <p>
-              {restScore >= 4
-                ? "오늘은 손 사용 부담이 큽니다. 짧게 쉬고 다시 기록하세요."
-                : restScore >= 2
-                  ? "다음 세션 전에 1분 휴식을 권합니다."
-                  : "현재 상태에서는 짧은 음악 훈련을 진행할 수 있습니다."}
-            </p>
-          </div>
-
-          <div className={`${styles.checkPanel} ${drawerOpen ? styles.checkPanelOpen : ""}`}>
-            <button type="button" onClick={() => setDrawerOpen((value) => !value)}>
-              세션 후 상태 기록
-            </button>
-            <div className={styles.checkGroups}>
-              {(Object.keys(checkLabels) as CheckKey[]).map((key) => (
-                <div key={key} className={styles.checkGroup}>
-                  <span>{checkLabels[key]}</span>
-                  <div>
-                    {checkOptions[key].map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        className={checks[key] === option ? styles.selectedCheck : ""}
-                        onClick={() => setChecks((value) => ({ ...value, [key]: option }))}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
       </section>
     </main>
   );
