@@ -325,6 +325,12 @@
   opacity: 0.88;
 }
 
+.laneFeedback::before {
+  animation: laneFlash 0.42s ease-out;
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--lane-color) 42%, transparent) 58%, transparent 100%);
+  opacity: 1;
+}
+
 .hitLine {
   position: absolute;
   left: 14px;
@@ -370,6 +376,13 @@
   pointer-events: none;
 }
 
+.feedbackLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
 .note {
   position: absolute;
   width: min(68px, 15vw);
@@ -389,6 +402,74 @@
   inset: 8px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.28);
+}
+
+.touchFeedback {
+  position: absolute;
+  left: calc((var(--lane) + 0.5) * 25%);
+  top: calc(var(--hit-y) - 64px);
+  width: min(132px, 22vw);
+  min-height: 54px;
+  display: grid;
+  place-items: center;
+  translate: -50% -50%;
+  border-radius: var(--radius);
+  color: #fff;
+  background: color-mix(in srgb, var(--feedback-color) 72%, #111827);
+  box-shadow: 0 0 34px color-mix(in srgb, var(--feedback-color) 52%, transparent);
+  animation: feedbackPop 0.68s ease-out forwards;
+}
+
+.touchFeedback::before {
+  content: "";
+  position: absolute;
+  width: 76px;
+  height: 76px;
+  border: 3px solid color-mix(in srgb, var(--feedback-color) 72%, white);
+  border-radius: 999px;
+  opacity: 0.78;
+  animation: feedbackRing 0.68s ease-out forwards;
+}
+
+.touchFeedback strong {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(14px, 2.4vw, 24px);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.touchFeedback small {
+  position: relative;
+  z-index: 1;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 11px;
+}
+
+.perfect {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--feedback-color) 70%, white), var(--teal));
+  color: #0f172a;
+}
+
+.great {
+  background: linear-gradient(135deg, var(--blue), color-mix(in srgb, var(--feedback-color) 58%, #111827));
+}
+
+.good {
+  background: linear-gradient(135deg, var(--amber), color-mix(in srgb, var(--feedback-color) 58%, #111827));
+}
+
+.bad,
+.miss {
+  background: linear-gradient(135deg, #ff4d5e, #471520);
+  box-shadow: 0 0 34px rgba(255, 77, 94, 0.42);
+  animation: feedbackBad 0.52s ease-out forwards;
+}
+
+.bad::before,
+.miss::before {
+  border-color: rgba(255, 120, 130, 0.84);
 }
 
 .padRow {
@@ -431,6 +512,10 @@
   transform: translateY(3px) scale(0.98);
   border-color: rgba(255, 255, 255, 0.52);
   box-shadow: 0 0 34px color-mix(in srgb, var(--pad-color) 44%, transparent);
+}
+
+.padFeedback {
+  animation: padPulse 0.44s ease-out;
 }
 
 .stageMessage {
@@ -490,6 +575,78 @@
   margin: 0;
   padding: 0 18px;
   background: rgba(255, 255, 255, 0.86);
+}
+
+@keyframes laneFlash {
+  0% {
+    opacity: 1;
+    filter: saturate(1.6);
+  }
+  100% {
+    opacity: 0.18;
+    filter: saturate(1);
+  }
+}
+
+@keyframes feedbackPop {
+  0% {
+    opacity: 0;
+    scale: 0.7;
+    translate: -50% -18%;
+  }
+  18% {
+    opacity: 1;
+    scale: 1.08;
+  }
+  100% {
+    opacity: 0;
+    scale: 1;
+    translate: -50% -92%;
+  }
+}
+
+@keyframes feedbackBad {
+  0% {
+    opacity: 0;
+    scale: 0.76;
+    translate: -52% -50%;
+  }
+  24% {
+    opacity: 1;
+    scale: 1.04;
+    translate: -48% -50%;
+  }
+  48% {
+    translate: -53% -50%;
+  }
+  100% {
+    opacity: 0;
+    scale: 0.98;
+    translate: -50% -76%;
+  }
+}
+
+@keyframes feedbackRing {
+  0% {
+    opacity: 0.82;
+    scale: 0.38;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.85;
+  }
+}
+
+@keyframes padPulse {
+  0% {
+    box-shadow: 0 0 0 color-mix(in srgb, var(--pad-color) 0%, transparent);
+  }
+  45% {
+    box-shadow: 0 0 42px color-mix(in srgb, var(--pad-color) 62%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 color-mix(in srgb, var(--pad-color) 0%, transparent);
+  }
 }
 
 @media (max-width: 940px) {

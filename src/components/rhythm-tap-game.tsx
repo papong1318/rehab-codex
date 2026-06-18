@@ -23,6 +23,14 @@ type Stats = {
   good: number;
 };
 
+type TouchFeedback = {
+  id: number;
+  lane: number;
+  label: string;
+  timing: string;
+  kind: "perfect" | "great" | "good" | "bad" | "miss";
+};
+
 const BPM = 96;
 const BEAT = 60 / BPM;
 const TRAVEL_TIME = 1.85;
@@ -201,16 +209,23 @@ export default function RhythmTapGame() {
   const [judgement, setJudgement] = useState("READY");
   const [timing, setTiming] = useState("tap on the beat");
   const [pressedLane, setPressedLane] = useState<number | null>(null);
+  const [feedbacks, setFeedbacks] = useState<TouchFeedback[]>([]);
   const audioRef = useRef<AudioContext | null>(null);
   const outputRef = useRef<AudioNode | null>(null);
   const startedAtRef = useRef(0);
   const rafRef = useRef<number | null>(null);
+  const feedbackIdRef = useRef(0);
 
   const totalPlayed = stats.hits + stats.misses;
   const accuracy = totalPlayed
     ? Math.round(((stats.perfect + stats.great * 0.74 + stats.good * 0.48) / totalPlayed) * 100)
     : 0;
   const progress = Math.min(100, (songTime / SONG_LENGTH) * 100);
+  const latestFeedbackByLane = useMemo(() => {
+    const map = new Map<number, TouchFeedback>();
+    feedbacks.forEach((feedback) => map.set(feedback.lane, feedback));
+    return map;
+  }, [feedbacks]);
 
   const visibleNotes = useMemo(() => {
     return chart
@@ -254,6 +269,7 @@ export default function RhythmTapGame() {
     setSongTime(0);
     setRunning(true);
     setPaused(false);
+    setFeedbacks([]);
     setJudgement("READY");
     setTiming("tap on the beat");
     [659.25, 783.99, 1046.5].forEach((freq, index) => {
@@ -265,7 +281,23 @@ export default function RhythmTapGame() {
   function stopGame() {
     setRunning(false);
     setPaused(false);
+    setFeedbacks([]);
     cleanupAudio();
+  }
+
+  function showFeedback(lane: number, label: string, timingText: string, kind: TouchFeedback["kind"]) {
+    const id = feedbackIdRef.current + 1;
+    feedbackIdRef.current = id;
+    setFeedbacks((current) => [...current.slice(-7), { id, lane, label, timing: timingText, kind }]);
+    window.setTimeout(() => {
+      setFeedbacks((current) => current.filter((feedback) => feedback.id !== id));
+    }, kind === "miss" || kind === "bad" ? 520 : 680);
+  }
+
+  function pulseDevice(kind: TouchFeedback["kind"]) {
+    if (!("vibrate" in navigator)) return;
+    const pattern = kind === "perfect" ? 12 : kind === "great" ? 18 : kind === "good" ? 24 : [36, 24, 36];
+    navigator.vibrate(pattern);
   }
 
   function tick() {
@@ -273,19 +305,23 @@ export default function RhythmTapGame() {
     if (!ctx || !running) return;
     const time = Math.max(0, ctx.currentTime - startedAtRef.current);
     setSongTime(time);
+    const missedLanes: number[] = [];
     setChart((current) => {
       let changed = false;
       const next = current.map((note) => {
         if (!note.hit && !note.missed && time - note.time > HIT_WINDOW) {
           changed = true;
+          missedLanes.push(note.lane);
           return { ...note, missed: true };
         }
         return note;
       });
       if (changed) {
-        setStats((value) => ({ ...value, combo: 0, misses: value.misses + 1 }));
+        setStats((value) => ({ ...value, combo: 0, misses: value.misses + missedLanes.length }));
         setJudgement("MISS");
         setTiming("late");
+        missedLanes.forEach((lane) => showFeedback(lane, "MISS", "late", "miss"));
+        pulseDevice("miss");
         playTone(ctx, outputRef.current ?? ctx.destination, ctx.currentTime, 92, 0.08, "sawtooth", 0.16);
       }
       return changed ? next : current;
@@ -342,6 +378,8 @@ export default function RhythmTapGame() {
       setStats((value) => ({ ...value, combo: 0 }));
       setJudgement("BAD");
       setTiming("no note");
+      showFeedback(lane, "BAD", "no note", "bad");
+      pulseDevice("bad");
       if (audioRef.current) playTone(audioRef.current, outputRef.current ?? audioRef.current.destination, audioRef.current.currentTime, 92, 0.08, "sawtooth", 0.16);
       return;
     }
@@ -361,7 +399,10 @@ export default function RhythmTapGame() {
       };
     });
     setJudgement(result.label);
-    setTiming(`${offset >= 0 ? "+" : "-"}${Math.round(abs * 1000)}ms`);
+    const timingText = `${offset >= 0 ? "+" : "-"}${Math.round(abs * 1000)}ms`;
+    setTiming(timingText);
+    showFeedback(lane, result.label, timingText, result.kind);
+    pulseDevice(result.kind);
     if (audioRef.current) {
       const volume = result.label === "PERFECT" ? 0.42 : result.label === "GREAT" ? 0.34 : 0.25;
       playTone(audioRef.current, outputRef.current ?? audioRef.current.destination, audioRef.current.currentTime, LANE_NOTES[lane], 0.12, "triangle", volume);
@@ -370,10 +411,10 @@ export default function RhythmTapGame() {
   }
 
   function judge(abs: number) {
-    if (abs <= 0.045) return { label: "PERFECT", points: 1000, bucket: "perfect" as const };
-    if (abs <= 0.09) return { label: "GREAT", points: 650, bucket: "great" as const };
-    if (abs <= 0.145) return { label: "GOOD", points: 350, bucket: "good" as const };
-    return { label: "OK", points: 120, bucket: "good" as const };
+    if (abs <= 0.045) return { label: "PERFECT", points: 1000, bucket: "perfect" as const, kind: "perfect" as const };
+    if (abs <= 0.09) return { label: "GREAT", points: 650, bucket: "great" as const, kind: "great" as const };
+    if (abs <= 0.145) return { label: "GOOD", points: 350, bucket: "good" as const, kind: "good" as const };
+    return { label: "OK", points: 120, bucket: "good" as const, kind: "good" as const };
   }
 
   return (
@@ -440,7 +481,11 @@ export default function RhythmTapGame() {
             <div className={styles.stage}>
               <div className={styles.lanes}>
                 {LANE_LABELS.map((label, index) => (
-                  <div className={styles.lane} key={label} style={{ "--lane-color": LANE_COLORS[index] } as React.CSSProperties} />
+                  <div
+                    className={`${styles.lane} ${latestFeedbackByLane.has(index) ? styles.laneFeedback : ""}`}
+                    key={label}
+                    style={{ "--lane-color": LANE_COLORS[index] } as React.CSSProperties}
+                  />
                 ))}
               </div>
               <div className={styles.beatRuler}>
@@ -461,10 +506,25 @@ export default function RhythmTapGame() {
                   />
                 ))}
               </div>
+              <div className={styles.feedbackLayer} aria-hidden="true">
+                {feedbacks.map((feedback) => (
+                  <span
+                    className={`${styles.touchFeedback} ${styles[feedback.kind]}`}
+                    key={feedback.id}
+                    style={{
+                      "--lane": feedback.lane,
+                      "--feedback-color": LANE_COLORS[feedback.lane],
+                    } as React.CSSProperties}
+                  >
+                    <strong>{feedback.label}</strong>
+                    <small>{feedback.timing}</small>
+                  </span>
+                ))}
+              </div>
               <div className={styles.padRow}>
                 {LANE_LABELS.map((label, index) => (
                   <button
-                    className={`${styles.pad} ${pressedLane === index ? styles.pressed : ""}`}
+                    className={`${styles.pad} ${pressedLane === index ? styles.pressed : ""} ${latestFeedbackByLane.has(index) ? styles.padFeedback : ""}`}
                     data-lane={index}
                     key={label}
                     onPointerDown={() => hitLane(index)}
