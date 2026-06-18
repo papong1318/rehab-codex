@@ -177,6 +177,8 @@ export default function FingerLiftGame() {
   const judged = stats.hits + stats.misses;
   const accuracy = judged ? Math.round(((stats.perfect + stats.great * 0.74 + stats.good * 0.48) / judged) * 100) : 0;
   const nextEvent = events.find((event) => !event.judged);
+  const cueText = targetLevel > 0.72 ? "높게 들기" : targetLevel > 0.32 ? "천천히 들어올리기" : "패드 가까이";
+  const actionText = nextEvent?.type === "down" ? "마지막 C에서 다시 누르기" : "올라가는 소리에 맞춰 떼기";
 
   const scalePoints = useMemo(() => {
     return SCALE.map((note, index) => {
@@ -365,6 +367,12 @@ export default function FingerLiftGame() {
     recordAction("lift");
   }
 
+  function releasePointer(event: React.PointerEvent<HTMLButtonElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
   return (
     <main className={styles.page}>
       <header className={styles.topbar}>
@@ -431,6 +439,30 @@ export default function FingerLiftGame() {
             </svg>
 
             <div className={styles.liftArea}>
+              <div className={styles.heightLabels} aria-hidden="true">
+                <span>높게</span>
+                <span>중간</span>
+                <span>패드</span>
+              </div>
+              <div className={styles.cueText}>
+                <strong>{cueText}</strong>
+                <span>{actionText}</span>
+              </div>
+              <div className={styles.handGuide} aria-hidden="true">
+                <div className={styles.handGhost} style={{ "--level": targetLevel } as React.CSSProperties}>
+                  <div className={styles.fingerStem} />
+                  <div className={styles.fingertip} />
+                </div>
+                <div className={`${styles.handLive} ${holding ? styles.touchingHand : styles.liftedHand}`} style={{ "--level": userLevel } as React.CSSProperties}>
+                  <div className={styles.fingerStem} />
+                  <div className={styles.fingertip} />
+                </div>
+                <div className={styles.palm}>
+                  <i />
+                  <i />
+                  <i />
+                </div>
+              </div>
               <div className={styles.targetLine} style={{ "--level": targetLevel } as React.CSSProperties} />
               <div className={styles.fingerLine} style={{ "--level": userLevel } as React.CSSProperties} />
               <div className={styles.targetDot} style={{ "--level": targetLevel } as React.CSSProperties}>Cue</div>
@@ -455,9 +487,12 @@ export default function FingerLiftGame() {
               onPointerDown={handleDown}
               onPointerLeave={(event) => {
                 if (holding) handleUp();
-                event.currentTarget.releasePointerCapture(event.pointerId);
+                releasePointer(event);
               }}
-              onPointerUp={handleUp}
+              onPointerUp={(event) => {
+                handleUp();
+                releasePointer(event);
+              }}
               type="button"
             >
               <strong>{holding ? "누르는 중" : "손가락 패드"}</strong>
