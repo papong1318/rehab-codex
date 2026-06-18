@@ -433,7 +433,7 @@
 .handLive {
   position: absolute;
   left: 50%;
-  bottom: calc(64px + var(--level) * 68%);
+  bottom: calc(64px + var(--lift-offset, 0%));
   width: 112px;
   height: 104px;
   translate: -50% 50%;
@@ -525,7 +525,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(90% - var(--level) * 78%);
+  top: calc(90% - var(--line-offset, 0%));
   height: 2px;
   background: rgba(255, 201, 74, 0.58);
 }
@@ -539,7 +539,7 @@
 .fingerDot {
   position: absolute;
   left: 62%;
-  top: calc(90% - var(--level) * 78%);
+  top: calc(90% - var(--line-offset, 0%));
   min-width: 74px;
   min-height: 42px;
   display: grid;
@@ -571,7 +571,7 @@
 .feedback {
   position: absolute;
   left: 50%;
-  top: calc(90% - var(--level) * 78%);
+  top: calc(90% - var(--line-offset, 0%));
   display: grid;
   place-items: center;
   min-width: 136px;

@@ -179,6 +179,14 @@ export default function FingerLiftGame() {
   const nextEvent = events.find((event) => !event.judged);
   const cueText = targetLevel > 0.72 ? "화면에서 멀리 떼기" : targetLevel > 0.32 ? "수직으로 조금 더 떼기" : "화면 가까이";
   const actionText = nextEvent?.type === "down" ? "마지막 C에서 화면을 다시 누르기" : "올라가는 소리에 맞춰 화면에서 떼기";
+  const targetPositionStyle = {
+    "--lift-offset": `${targetLevel * 68}%`,
+    "--line-offset": `${targetLevel * 78}%`,
+  } as React.CSSProperties;
+  const userPositionStyle = {
+    "--lift-offset": `${userLevel * 68}%`,
+    "--line-offset": `${userLevel * 78}%`,
+  } as React.CSSProperties;
 
   const scalePoints = useMemo(() => {
     return SCALE.map((note, index) => {
@@ -453,27 +461,27 @@ export default function FingerLiftGame() {
                   <span>태블릿 화면</span>
                 </div>
                 <div className={styles.liftRail} />
-                <div className={styles.handGhost} style={{ "--level": targetLevel } as React.CSSProperties}>
+                <div className={styles.handGhost} style={targetPositionStyle}>
                   <div className={styles.sideFinger} />
                   <div className={styles.fingertip} />
                 </div>
-                <div className={`${styles.handLive} ${holding ? styles.touchingHand : styles.liftedHand}`} style={{ "--level": userLevel } as React.CSSProperties}>
+                <div className={`${styles.handLive} ${holding ? styles.touchingHand : styles.liftedHand}`} style={userPositionStyle}>
                   <div className={styles.sideFinger} />
                   <div className={styles.fingertip} />
                 </div>
                 <div className={styles.contactGlow} />
               </div>
-              <div className={styles.targetLine} style={{ "--level": targetLevel } as React.CSSProperties} />
-              <div className={styles.fingerLine} style={{ "--level": userLevel } as React.CSSProperties} />
-              <div className={styles.targetDot} style={{ "--level": targetLevel } as React.CSSProperties}>Cue</div>
-              <div className={`${styles.fingerDot} ${holding ? "" : styles.lifted}`} style={{ "--level": userLevel } as React.CSSProperties}>
+              <div className={styles.targetLine} style={targetPositionStyle} />
+              <div className={styles.fingerLine} style={userPositionStyle} />
+              <div className={styles.targetDot} style={targetPositionStyle}>Cue</div>
+              <div className={`${styles.fingerDot} ${holding ? "" : styles.lifted}`} style={userPositionStyle}>
                 {holding ? "Touch" : "Lift"}
               </div>
               {feedbacks.map((feedback) => (
                 <div
                   className={`${styles.feedback} ${styles[feedback.kind]}`}
                   key={feedback.id}
-                  style={{ "--level": feedback.level } as React.CSSProperties}
+                  style={{ "--line-offset": `${feedback.level * 78}%` } as React.CSSProperties}
                 >
                   <strong>{feedback.label}</strong>
                   <span>{feedback.detail}</span>
