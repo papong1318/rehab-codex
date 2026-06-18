@@ -177,8 +177,8 @@ export default function FingerLiftGame() {
   const judged = stats.hits + stats.misses;
   const accuracy = judged ? Math.round(((stats.perfect + stats.great * 0.74 + stats.good * 0.48) / judged) * 100) : 0;
   const nextEvent = events.find((event) => !event.judged);
-  const cueText = targetLevel > 0.72 ? "높게 들기" : targetLevel > 0.32 ? "천천히 들어올리기" : "패드 가까이";
-  const actionText = nextEvent?.type === "down" ? "마지막 C에서 다시 누르기" : "올라가는 소리에 맞춰 떼기";
+  const cueText = targetLevel > 0.72 ? "화면에서 멀리 떼기" : targetLevel > 0.32 ? "수직으로 조금 더 떼기" : "화면 가까이";
+  const actionText = nextEvent?.type === "down" ? "마지막 C에서 화면을 다시 누르기" : "올라가는 소리에 맞춰 화면에서 떼기";
 
   const scalePoints = useMemo(() => {
     return SCALE.map((note, index) => {
@@ -449,19 +449,19 @@ export default function FingerLiftGame() {
                 <span>{actionText}</span>
               </div>
               <div className={styles.handGuide} aria-hidden="true">
+                <div className={styles.screenPlane}>
+                  <span>태블릿 화면</span>
+                </div>
+                <div className={styles.liftRail} />
                 <div className={styles.handGhost} style={{ "--level": targetLevel } as React.CSSProperties}>
-                  <div className={styles.fingerStem} />
+                  <div className={styles.sideFinger} />
                   <div className={styles.fingertip} />
                 </div>
                 <div className={`${styles.handLive} ${holding ? styles.touchingHand : styles.liftedHand}`} style={{ "--level": userLevel } as React.CSSProperties}>
-                  <div className={styles.fingerStem} />
+                  <div className={styles.sideFinger} />
                   <div className={styles.fingertip} />
                 </div>
-                <div className={styles.palm}>
-                  <i />
-                  <i />
-                  <i />
-                </div>
+                <div className={styles.contactGlow} />
               </div>
               <div className={styles.targetLine} style={{ "--level": targetLevel } as React.CSSProperties} />
               <div className={styles.fingerLine} style={{ "--level": userLevel } as React.CSSProperties} />
@@ -496,14 +496,14 @@ export default function FingerLiftGame() {
               type="button"
             >
               <strong>{holding ? "누르는 중" : "손가락 패드"}</strong>
-              <span>{running ? "올라가는 음에서 떼고, 마지막 C에서 다시 누르기" : "Start 후 누른 상태로 준비"}</span>
+              <span>{running ? "올라가는 음에 맞춰 화면에서 떼고, 마지막 C에서 다시 누르기" : "Start 후 누른 상태로 준비"}</span>
             </button>
 
             {!running && (
               <div className={styles.stageMessage}>
                 <div className={styles.messageCard}>
                   <h2>{judge === "Session Clear" ? "Session Clear" : "Ready"}</h2>
-                  <p>Start를 누른 뒤 패드를 누른 상태로 시작합니다. 음이 올라가면 손가락을 들어올리고 마지막 C에서 다시 누릅니다.</p>
+                  <p>Start를 누른 뒤 패드를 누른 상태로 시작합니다. 음이 올라가면 손끝을 화면에서 수직으로 떼고 마지막 C에서 다시 누릅니다.</p>
                   <button type="button" onClick={() => void startGame()}>Start</button>
                 </div>
               </div>

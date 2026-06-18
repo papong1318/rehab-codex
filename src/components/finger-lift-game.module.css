@@ -357,100 +357,141 @@
 .handGuide {
   position: absolute;
   left: 50%;
-  bottom: 0;
-  width: min(360px, 70%);
-  height: 100%;
+  bottom: 18px;
+  width: min(520px, 78%);
+  height: calc(100% - 54px);
   translate: -50% 0;
   pointer-events: none;
   z-index: 2;
 }
 
-.palm {
+.screenPlane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 18px;
+  border-radius: 18px 18px 8px 8px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 12px;
+  font-weight: 800;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.04)),
+    linear-gradient(90deg, rgba(65, 214, 182, 0.42), rgba(95, 141, 255, 0.34));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.screenPlane::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 132px;
+  top: 8px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.liftRail {
   position: absolute;
   left: 50%;
-  bottom: 4%;
-  width: 210px;
-  height: 88px;
+  bottom: 68px;
+  width: 2px;
+  height: calc(100% - 102px);
   translate: -50% 0;
-  border-radius: 42px 42px 24px 24px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(65, 214, 182, 0.18));
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: inset 0 0 24px rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, rgba(255, 201, 74, 0.72), rgba(255, 201, 74, 0));
+  box-shadow: 0 0 18px rgba(255, 201, 74, 0.22);
 }
 
-.palm i {
+.liftRail::before,
+.liftRail::after {
+  content: "";
   position: absolute;
-  bottom: 56px;
-  width: 36px;
-  height: 86px;
-  border-radius: 999px 999px 20px 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(65, 214, 182, 0.12));
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  left: 50%;
+  width: 18px;
+  height: 2px;
+  translate: -50% 0;
+  background: rgba(255, 255, 255, 0.42);
 }
 
-.palm i:nth-child(1) {
-  left: 24px;
-  height: 72px;
+.liftRail::before {
+  top: 0;
 }
 
-.palm i:nth-child(2) {
-  left: 80px;
-  height: 94px;
-}
-
-.palm i:nth-child(3) {
-  right: 24px;
-  height: 78px;
+.liftRail::after {
+  bottom: 0;
 }
 
 .handGhost,
 .handLive {
   position: absolute;
   left: 50%;
-  bottom: 52px;
-  width: 62px;
-  height: calc(96px + var(--level) * 190px);
-  translate: -50% 0;
-  transform-origin: 50% 100%;
-  transition: height 0.12s linear, rotate 0.12s ease;
+  bottom: calc(64px + var(--level) * 68%);
+  width: 112px;
+  height: 104px;
+  translate: -50% 50%;
+  transform-origin: 50% 70%;
+  transition: bottom 0.12s linear, scale 0.12s ease, opacity 0.12s ease;
 }
 
 .handGhost {
-  left: 39%;
-  opacity: 0.62;
+  left: 41%;
+  opacity: 0.58;
 }
 
 .handLive {
-  left: 61%;
+  left: 59%;
+  z-index: 2;
 }
 
-.fingerStem {
+.sideFinger {
   position: absolute;
   left: 50%;
-  bottom: 0;
-  width: 46px;
-  height: 100%;
+  top: 13px;
+  width: 58px;
+  height: 76px;
   translate: -50% 0;
-  border-radius: 999px 999px 22px 22px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(65, 214, 182, 0.82));
+  border-radius: 28px 28px 24px 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(65, 214, 182, 0.78));
   border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 0 28px rgba(65, 214, 182, 0.22);
+  box-shadow:
+    inset 0 12px 18px rgba(255, 255, 255, 0.08),
+    0 0 28px rgba(65, 214, 182, 0.2);
+}
+
+.sideFinger::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  top: 28px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .fingertip {
   position: absolute;
   left: 50%;
-  top: -10px;
-  width: 54px;
-  height: 54px;
+  bottom: 3px;
+  width: 70px;
+  height: 38px;
   translate: -50% 0;
-  border-radius: 999px;
+  border-radius: 999px 999px 24px 24px;
   background: var(--mint);
-  box-shadow: 0 0 34px rgba(65, 214, 182, 0.36);
+  box-shadow:
+    0 0 34px rgba(65, 214, 182, 0.36),
+    0 12px 26px rgba(65, 214, 182, 0.18);
 }
 
-.handGhost .fingerStem {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 201, 74, 0.78));
+.handGhost .sideFinger {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 201, 74, 0.72));
   box-shadow: 0 0 28px rgba(255, 201, 74, 0.18);
 }
 
@@ -460,11 +501,23 @@
 }
 
 .touchingHand {
-  rotate: -2deg;
+  scale: 1.03 0.92;
 }
 
 .liftedHand {
-  rotate: 3deg;
+  scale: 1.02;
+}
+
+.contactGlow {
+  position: absolute;
+  left: 59%;
+  bottom: 62px;
+  width: 118px;
+  height: 24px;
+  translate: -50% 0;
+  border-radius: 999px;
+  background: radial-gradient(ellipse, rgba(65, 214, 182, 0.44), transparent 68%);
+  opacity: 0.8;
 }
 
 .targetLine,
