@@ -41,7 +41,7 @@ type Phase = {
   endBeat: number;
 };
 
-const BPM = 96;
+const BPM = 88;
 const BEAT = 60 / BPM;
 const TRAVEL_TIME = 1.85;
 const HIT_WINDOW = 0.2;
@@ -238,10 +238,10 @@ function scheduleSong(ctx: AudioContext, out: AudioNode, chart: Note[], baseTime
     } else if (beat < 32) {
       if (beat % 1 === 0) {
         const accent = beat % 4 === 0;
-        playNoise(ctx, out, t, 0.04, accent ? 0.24 : 0.16, "highpass", accent ? 5200 : 3900);
-        playTone(ctx, out, t, accent ? 880 : 660, 0.045, "square", accent ? 0.16 : 0.1);
+        playNoise(ctx, out, t, 0.055, accent ? 0.38 : 0.24, "highpass", accent ? 5600 : 4200);
+        playTone(ctx, out, t, accent ? 1046.5 : 784, 0.06, "square", accent ? 0.26 : 0.17);
       } else {
-        playNoise(ctx, out, t, 0.028, 0.07, "highpass", 6200);
+        playNoise(ctx, out, t, 0.035, 0.12, "highpass", 6500);
       }
     } else {
       playNoise(ctx, out, t, 0.045, beat % 1 === 0 ? 0.15 : 0.08, "highpass", 6200);
@@ -531,10 +531,10 @@ export default function RhythmTapGame() {
           <section className={styles.songCard}>
             <div>
               <h2>PSE Guided Rhythm Session</h2>
-              <p>리듬 동조화에서 시작해 메트로놈을 거친 뒤 음악으로 확장되는 96 BPM 세션입니다.</p>
+              <p>리듬 동조화에서 시작해 메트로놈을 거친 뒤 음악으로 확장되는 88 BPM 세션입니다.</p>
             </div>
             <div className={styles.metaList}>
-              <div><small>BPM</small><strong>96</strong></div>
+              <div><small>BPM</small><strong>88</strong></div>
               <div><small>Length</small><strong>{Math.round(SONG_LENGTH)}s</strong></div>
               <div><small>Notes</small><strong>{chart.length}</strong></div>
               <div><small>Mode</small><strong>4 Lane</strong></div>
