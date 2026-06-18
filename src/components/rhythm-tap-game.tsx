@@ -456,7 +456,7 @@ export default function RhythmTapGame() {
                     style={{
                       "--lane": note.lane,
                       "--note-color": LANE_COLORS[note.lane],
-                      transform: `translateY(${note.top}%)`,
+                      top: `${note.top}%`,
                     } as React.CSSProperties}
                   />
                 ))}
