@@ -528,7 +528,13 @@ export default function PinchCrescendoGame() {
             })}
 
             {!running && (
-              <div className={styles.stageMessage}>
+              <div
+                className={styles.stageMessage}
+                onPointerCancel={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+                onPointerMove={(event) => event.stopPropagation()}
+                onPointerUp={(event) => event.stopPropagation()}
+              >
                 <div className={styles.messageCard}>
                   <h2>{judge === "Session Clear" ? "Session Clear" : "Ready"}</h2>
                   <p>엄지는 분홍 원에 고정하고, 파란 손가락 점을 잡아 노란 링을 따라 움직입니다.</p>
