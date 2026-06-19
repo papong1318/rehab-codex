@@ -23,10 +23,10 @@ type Stats = {
 };
 
 const REPEAT_COUNT = 4;
-const STEP_TIME = 0.58;
-const REST_TIME = 0.72;
-const PREP_TIME = 0.72;
-const SCORE_INTERVAL = 0.18;
+const STEP_TIME = 1.08;
+const REST_TIME = 1.25;
+const PREP_TIME = 1.1;
+const SCORE_INTERVAL = 0.22;
 const PEAK_INDEX = 6;
 const MOTION: MotionNote[] = [
   { name: "C", freq: 261.63, level: 0 },
@@ -64,10 +64,6 @@ function makeStats(): Stats {
   };
 }
 
-function easeInOut(t: number) {
-  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-}
-
 function targetAt(time: number) {
   if (time < PREP_TIME) return 0;
   const local = time - PREP_TIME;
@@ -75,11 +71,8 @@ function targetAt(time: number) {
   if (round >= REPEAT_COUNT) return 0;
   const within = local - round * ROUND_TIME;
   if (within >= PHRASE_TIME) return 0;
-  const index = Math.floor(within / STEP_TIME);
-  const frac = (within - index * STEP_TIME) / STEP_TIME;
-  const start = MOTION[Math.min(index, MOTION.length - 1)].level;
-  const end = MOTION[Math.min(index + 1, MOTION.length - 1)].level;
-  return start + (end - start) * easeInOut(frac);
+  const phase = within / PHRASE_TIME;
+  return (1 - Math.cos(phase * Math.PI * 2)) / 2;
 }
 
 function phaseAt(time: number) {
@@ -228,7 +221,7 @@ export default function PinchCrescendoGame() {
     for (let round = 0; round < REPEAT_COUNT; round += 1) {
       MOTION.forEach((note, index) => {
         const t = baseTime + PREP_TIME + round * ROUND_TIME + index * STEP_TIME;
-        playTone(ctx, out, t, note.freq, STEP_TIME * 0.68, note.level);
+        playTone(ctx, out, t, note.freq, STEP_TIME * 0.96, note.level);
         if (index === 0) playPulse(ctx, out, t);
         if (index === PEAK_INDEX) playTone(ctx, out, t + 0.02, 1046.5, 0.14, 0.95);
       });
