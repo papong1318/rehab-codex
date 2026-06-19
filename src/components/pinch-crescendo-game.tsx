@@ -5,6 +5,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./pinch-crescendo-game.module.css";
 
 type MotionNote = { name: string; freq: number; level: number };
+type FingerMode = {
+  id: "index" | "middle" | "ring" | "little";
+  label: string;
+  shortLabel: string;
+  cue: string;
+  className: string;
+};
 type JudgeKind = "perfect" | "great" | "good" | "miss" | "touch";
 type Pop = { id: number; label: string; level: number; kind: JudgeKind };
 type Stats = {
@@ -28,6 +35,12 @@ const REST_TIME = 1.25;
 const PREP_TIME = 1.1;
 const SCORE_INTERVAL = 0.22;
 const PEAK_INDEX = 6;
+const FINGER_MODES: FingerMode[] = [
+  { id: "index", label: "검지", shortLabel: "검지", cue: "검지를 파란 점에 올리고 노란 링을 따라갑니다.", className: "indexMode" },
+  { id: "middle", label: "중지", shortLabel: "중지", cue: "중지를 파란 점에 올리고 천천히 벌렸다가 돌아옵니다.", className: "middleMode" },
+  { id: "ring", label: "약지", shortLabel: "약지", cue: "약지를 파란 점에 올리고 노란 링과 같은 속도로 움직입니다.", className: "ringMode" },
+  { id: "little", label: "소지", shortLabel: "소지", cue: "새끼손가락을 파란 점에 올리고 가능한 범위에서 부드럽게 따라갑니다.", className: "littleMode" },
+];
 const MOTION: MotionNote[] = [
   { name: "C", freq: 261.63, level: 0 },
   { name: "D", freq: 293.66, level: 0.16 },
@@ -170,6 +183,7 @@ export default function PinchCrescendoGame() {
   const [stats, setStats] = useState<Stats>(() => makeStats());
   const [judge, setJudge] = useState("READY");
   const [detail, setDetail] = useState("thumb fixed, follow the yellow ring");
+  const [fingerMode, setFingerMode] = useState<FingerMode>(FINGER_MODES[0]);
   const [pops, setPops] = useState<Pop[]>([]);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<AudioContext | null>(null);
@@ -261,7 +275,7 @@ export default function PinchCrescendoGame() {
     setStats(makeStats());
     setPops([]);
     setJudge("READY");
-    setDetail("follow the yellow ring");
+    setDetail(fingerMode.cue);
     scheduleSong(ctx, out, startedAtRef.current);
     rafRef.current = requestAnimationFrame(tick);
   }
@@ -413,14 +427,36 @@ export default function PinchCrescendoGame() {
         <aside className={`${styles.panel} ${styles.dashboard}`}>
           <section className={styles.songCard}>
             <h2>Pinch Distance Phrase</h2>
-            <p>엄지는 고정하고 손가락을 노란 목표 링에 맞춰 벌렸다가 다시 오므립니다. 소리는 거리와 함께 커졌다가 작아집니다.</p>
+            <p>엄지는 고정하고 선택한 손가락을 노란 목표 링에 맞춰 벌렸다가 다시 오므립니다. 소리는 거리와 함께 커졌다가 작아집니다.</p>
             <div className={styles.metaList}>
               <div><small>Repeats</small><strong>{REPEAT_COUNT}</strong></div>
               <div><small>Length</small><strong>{Math.round(TOTAL_TIME)}s</strong></div>
               <div><small>Motion</small><strong>0-100%</strong></div>
-              <div><small>Music</small><strong>cresc.</strong></div>
+              <div><small>Finger</small><strong>{fingerMode.shortLabel}</strong></div>
             </div>
             <div className={styles.meter}><div style={{ width: `${progress}%` }} /></div>
+          </section>
+
+          <section className={styles.modeCard} aria-label="훈련 손가락 선택">
+            <strong>Finger Mode</strong>
+            <div className={styles.modeGrid}>
+              {FINGER_MODES.map((mode) => (
+                <button
+                  aria-pressed={fingerMode.id === mode.id}
+                  className={fingerMode.id === mode.id ? styles.activeMode : ""}
+                  disabled={running}
+                  key={mode.id}
+                  onClick={() => {
+                    setFingerMode(mode);
+                    setDetail(mode.cue);
+                    setJudge(mode.shortLabel);
+                  }}
+                  type="button"
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
           </section>
 
           <section className={styles.stats}>
@@ -456,6 +492,7 @@ export default function PinchCrescendoGame() {
         <section className={`${styles.panel} ${styles.gameCard}`}>
           <div className={styles.hud}>
             <span>Track <strong>{running ? "Playing" : "Ready"}</strong></span>
+            <span>Finger <strong>{fingerMode.shortLabel}</strong></span>
             <span>Touch <strong>{touching ? "On" : "Off"}</strong></span>
             <span>Phase <strong>{phase}</strong></span>
             <button type="button" onClick={() => void testSound()}>♪</button>
@@ -482,7 +519,7 @@ export default function PinchCrescendoGame() {
             <div className={styles.phaseCard}>
               <strong>{phase}</strong>
               <span>
-                {phase === "Crescendo" ? "음량이 커질수록 엄지에서 멀어집니다." : phase === "Decrescendo" ? "음량이 작아질수록 엄지 쪽으로 돌아옵니다." : "Start 후 파란 점을 잡고 노란 링을 따라갑니다."}
+                {phase === "Crescendo" ? `${fingerMode.shortLabel}가 엄지에서 천천히 멀어집니다.` : phase === "Decrescendo" ? `${fingerMode.shortLabel}가 엄지 쪽으로 천천히 돌아옵니다.` : `Start 후 ${fingerMode.shortLabel} 점을 잡고 노란 링을 따라갑니다.`}
               </span>
               <em>{Math.round(Math.abs(userLevel - targetLevel) * 100)}%</em>
             </div>
@@ -498,7 +535,7 @@ export default function PinchCrescendoGame() {
               <div className={styles.middleFinger} />
               <div className={styles.ringFinger} />
               <div className={styles.thumbSegment} style={{ "--tx": `${thumbPoint.x}%`, "--ty": `${thumbPoint.y}%` } as React.CSSProperties} />
-              <div className={styles.indexSegment} style={{ "--fx": `${fingerPoint.x}%`, "--fy": `${fingerPoint.y}%` } as React.CSSProperties} />
+              <div className={`${styles.indexSegment} ${styles[fingerMode.className]}`} style={{ "--fx": `${fingerPoint.x}%`, "--fy": `${fingerPoint.y}%` } as React.CSSProperties} />
             </div>
 
             <div className={styles.targetDot} style={{ left: `${targetPoint.x}%`, top: `${targetPoint.y}%`, scale: `${1 + targetLevel * 0.18}` }}>
@@ -506,7 +543,7 @@ export default function PinchCrescendoGame() {
             </div>
             <div className={styles.thumbDot} style={{ left: `${thumbPoint.x}%`, top: `${thumbPoint.y}%` }}>엄지</div>
             <div className={`${styles.fingerDot} ${touching ? "" : styles.off}`} style={{ left: `${fingerPoint.x}%`, top: `${fingerPoint.y}%` }}>
-              손가락
+              {fingerMode.shortLabel}
             </div>
 
             <div className={styles.volumeBeam} style={{ opacity: 0.2 + targetLevel * 0.72, scale: `${0.72 + targetLevel * 0.52}` }} />
@@ -530,7 +567,7 @@ export default function PinchCrescendoGame() {
               >
                 <div className={styles.messageCard}>
                   <h2>{judge === "Session Clear" ? "Session Clear" : "Ready"}</h2>
-                  <p>엄지는 분홍 원에 고정하고, 파란 손가락 점을 잡아 노란 링을 따라 움직입니다.</p>
+                  <p>엄지는 분홍 원에 고정하고, {fingerMode.shortLabel} 파란 점을 잡아 노란 링을 따라 천천히 움직입니다.</p>
                   <button type="button" onClick={() => void startGame()}>Start</button>
                 </div>
               </div>
